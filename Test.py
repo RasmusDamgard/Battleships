@@ -1,21 +1,24 @@
 #-------------------------------------------------------------------------------
-# Name:        module1
-# Purpose:
+# Name:        Battleships - Blind Edition
+# Purpose:     To help blind people
 #
-# Author:      OLIVER
+# Author:      Olipus & Mastercoder27
 #
 # Created:     30-01-2019
 # Copyright:   (c) OLIVER 2019
-# Licence:     <your licence>
+# Licence:     We dont need a license, bitch lasanga
 #-------------------------------------------------------------------------------
 import speech_recognition as sr
+from pygame import mixer
+
+mixer.init()
+mixer.music.load("coords6.wav")
+mixer.music.play()
 
 r = sr.Recognizer()
 
-harvard = sr.AudioFile('test.wav')
-with harvard as source:
+test = sr.AudioFile('coords6.wav')
+with test as source:
     audio = r.record(source)
 
 print(r.recognize_google(audio))
-
-input("")
