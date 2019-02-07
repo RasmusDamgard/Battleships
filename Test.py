@@ -6,7 +6,7 @@
 #
 # Created:     30-01-2019
 # Copyright:   (c) OLIVER 2019
-# Licence:     We dont need a license, bitch lasanga
+# Licence:     We dont need a license, bitch lasagna
 #-------------------------------------------------------------------------------
 import speech_recognition as sr
 from pygame import mixer
