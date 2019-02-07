@@ -35,7 +35,6 @@ class Board:
         self.columns = columns
         self.rows = rows
         self.ships = ships
-        print("was called")
 
     def draw_state(self):
         for c in range(self.columns):
@@ -75,6 +74,7 @@ class Board:
                 print("Miss!")
             else: #A ship
                 self.state[x-1][y-1] = 2
+                self.layout[x-1][y-1] = 1
                 print("Hit!")
         else: #Have already fired here.
             print("Already fired here")
