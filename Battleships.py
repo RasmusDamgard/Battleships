@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Name:        Battleships - Blind Edition
+# Name:        BattleshipNum - Blind Edition
 # Purpose:     To help blind people
 #
 # Author:      Olipus & Mastercoder27
@@ -24,18 +24,19 @@ r = sr.Recognizer()
 alphabet = ["a","b","c","d","e","g","h","i","j","k","l","m","n","o",]
 
 ###
-### Classes
+### Classes & Functions
 ###
 
 class Board:
-    def __init__(self, columns, rows, ships):
+    def __init__(self, columns, rows, shipArray):
         # Create two identical two-dimensional array.
         self.visible = [[0 for rows in range(rows)] for cols in range(columns)]
         self.hidden = [[0 for rows in range(rows)] for cols in range(columns)]
         # Safe column and row information in this instance.
         self.columns = columns
         self.rows = rows
-        self.ships = ships
+        self.shipArray = shipArray
+        self.shipNum = sum(self.shipArray)
 
     def draw_visible(self):
         for r in range(self.rows):
@@ -57,8 +58,8 @@ class Board:
         if(y + dirY * size > self.rows):
             print("Out of bounds")
             return
-        if(self.ships < 1):
-            print("All ships used")
+        if(self.shipNum < 1):
+            print("All shipNum used")
             return
         for i in range(size):
             if(checkFirst == True):
@@ -66,14 +67,15 @@ class Board:
                 if(self.hidden[x-1+i*dirX][y-1+i*dirY] > 0):
                     isValid = False
             else:
-                self.hidden[x-1+i*dirX][y-1+i*dirY] = self.ships
+                self.hidden[x-1+i*dirX][y-1+i*dirY] = self.shipNum
         if(isValid == False):
             print("Occupied")
             return
         if(checkFirst == True):
             self.add_ship(x, y, dirX, dirY, size, False)
         else:
-            self.ships -= 1
+            self.shipNum -= 1
+            self.shipArray[size] -= 1
             print("You succesfully placed a ship")
 
     def fire(self, x, y):
@@ -90,11 +92,11 @@ class Board:
                 typeHit = self.hidden[x-1][y-1]
                 self.hidden[x-1][y-1] += 10
                 print("Hit!")
-                self.checkDestroyed(typeHit)
+                self.check_destroyed(typeHit)
         else: #Have already fired here.
             print("Already fired here")
 
-    def checkDestroyed(self, typeHit):
+    def check_destroyed(self, typeHit):
         print("")
         if(any(typeHit in sublist for sublist in self.hidden) == False):
             for c in range(self.columns):
@@ -103,17 +105,28 @@ class Board:
                         self.visible[r][c] = 3
             print("Destroyed a ship")
 
+def StartGame(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
+    playerBoard = Board(sizeX, sizeY, shipArray)
+    computerBoard = Board(sizeX, sizeY, shipArray)
+    ShipSetup()
+
+def ShipSetup():
+    pass
+def PlayerTurn():
+    pass
+def ComputerTurn():
+    pass
+
 ###
 ### Code for execution
 ###
-
+    """
 playerBoard = Board(10, 10, 5)
 computerBoard = Board(10, 6, 5)
 
-#Add a ship at [5,5] heading right [1,0] with size 3.
-playerBoard.add_ship(9, 5, 1, 0, 3)
-#This ship doesnt get placed because it overlaps with the other.
+playerBoard.add_ship(5, 5, 1, 0, 3)
 playerBoard.add_ship(3, 3, 0, 1, 4)
+
 playerBoard.fire(5, 5)
 playerBoard.fire(5, 6)
 playerBoard.fire(5, 7)
@@ -127,8 +140,6 @@ print("")
 playerBoard.draw_visible()
 print("")
 
-print(computerBoard.columns)
-print(computerBoard.rows)
-
+    """
 # Prevent game from closing.
 input("Exit Game?")
