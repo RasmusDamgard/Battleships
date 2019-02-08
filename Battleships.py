@@ -111,16 +111,24 @@ def StartGame(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
     ShipSetup()
 
 def ShipSetup():
+    print("Where do you want your first ship?")
+    #mic = sr.Microphone()
+    #print(mic.list_microphone_names())
     pass
+
 def PlayerTurn():
     pass
+
 def ComputerTurn():
     pass
 
 ###
 ### Code for execution
 ###
-    """
+
+StartGame()
+
+"""
 playerBoard = Board(10, 10, 5)
 computerBoard = Board(10, 6, 5)
 
@@ -140,6 +148,6 @@ print("")
 playerBoard.draw_visible()
 print("")
 
-    """
+"""
 # Prevent game from closing.
 input("Exit Game?")
