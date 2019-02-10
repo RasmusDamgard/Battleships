@@ -112,9 +112,17 @@ def StartGame(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
 
 def ShipSetup():
     print("Where do you want your first ship?")
-    #mic = sr.Microphone()
-    #print(mic.list_microphone_names())
-    pass
+    mic = sr.Microphone()
+    with mic as source:
+        audio = r.listen(source)
+    message = r.recognize_google(audio)
+    if "over" in r.recognize_google(audio):
+        print("Gotcha!")
+        print(message)
+        type(message)
+    else:
+        print("I don't understand")
+    print("Said nothing")
 
 def PlayerTurn():
     pass
