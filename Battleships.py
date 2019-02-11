@@ -8,7 +8,6 @@
 # Copyright:   (c) OLIVER 2019
 # Licence:     We dont need a license, bitch lasagna
 #-------------------------------------------------------------------------------
-import speech_recognition as sr
 from pygame import mixer
 
 ###
@@ -18,10 +17,7 @@ from pygame import mixer
 # Declare and initiate PyGame Mixer.
 mixer.init()
 
-# Declare speech recognizer software.
-r = sr.Recognizer()
-
-alphabet = ["a","b","c","d","e","g","h","i","j","k","l","m","n","o",]
+alphabet = ["a","b","c","d","e","g","h","i","j","k","l","m","n","o"]
 
 ###
 ### Classes & Functions
@@ -105,24 +101,52 @@ class Board:
                         self.visible[r][c] = 3
             print("Destroyed a ship")
 
-def StartGame(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
+def GameLoop(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
     playerBoard = Board(sizeX, sizeY, shipArray)
     computerBoard = Board(sizeX, sizeY, shipArray)
-    ShipSetup()
+    ShipSetupPlayer(playerBoard)
+    isRunning = True
+    while(isRunning):
+        PlayerTurn()
+        ComputerTurn()
+    print("Game is over")
 
-def ShipSetup():
-    print("Where do you want your first ship?")
-    mic = sr.Microphone()
-    with mic as source:
-        audio = r.listen(source)
-    message = r.recognize_google(audio)
-    if "over" in r.recognize_google(audio):
-        print("Gotcha!")
-        print(message)
-        type(message)
-    else:
-        print("I don't understand")
-    print("Said nothing")
+def ShipSetupPlayer(playerBoard):
+    for i in range(playerBoard.shipNum):
+        isValid = False
+        x = 1
+        y = 1
+        while(isValid == False):
+            coords = input("Where do u want your ship?")
+            if len(coords) != 2:
+                isValid = False
+                continue
+
+            coordsSplit = list(coords)
+            x = coordsSplit[0].lower()
+            y = coordsSplit[1].lower()
+
+            print("Had two letters:", x, y)
+
+            
+            if x in alphabet or y in alphabet:
+                if IsNumber(x) == True or IsNumber(y) == True:
+                    try:
+                        int(y)    
+                    except ValueError:
+                        x, y = y, x   
+                    x = alphabet.index(x)
+                    y = int(y)
+                    print("Placed a ship")
+                    break
+                print("Was in the alphabet")
+            continue
+
+        #Add ship
+        
+    print("Deployed ships")
+
+
 
 def PlayerTurn():
     pass
@@ -130,11 +154,18 @@ def PlayerTurn():
 def ComputerTurn():
     pass
 
+def IsNumber(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        pass
+
 ###
 ### Code for execution
 ###
 
-StartGame()
+GameLoop()
 
 """
 playerBoard = Board(10, 10, 5)
