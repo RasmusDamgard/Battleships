@@ -17,7 +17,7 @@ from pygame import mixer
 # Declare and initiate PyGame Mixer.
 mixer.init()
 
-alphabet = ["a","b","c","d","e","g","h","i","j","k","l","m","n","o"]
+alphabet = ["a","b","c","d","e","g","h","i","j","k"]
 
 ###
 ### Classes & Functions
@@ -55,7 +55,7 @@ class Board:
             return False
         for i in range(size):
             #If there is anything but water on any square, its not valid.
-            if(self.hidden[x-1+i*dirX][y-1-i*dirY] != 0):
+            if(self.hidden[x+i*dirX][y+i*dirY] != 0):
                 return False
         return True
 
@@ -95,6 +95,8 @@ class Board:
 def GameLoop(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
     playerBoard = Board(sizeX, sizeY, shipArray)
     computerBoard = Board(sizeX, sizeY, shipArray)
+    playerBoard.draw_hidden()
+    playerBoard.draw_visible()
     ShipSetupPlayer(playerBoard)
     isRunning = True
     while(isRunning):
@@ -109,8 +111,9 @@ def ShipSetupPlayer(playerBoard):
         minSize = 1
         for i in range(playerBoard.shipNum):
             if(playerBoard.shipArray[i] != 0):
-                minSize = playerBoard.shipArray[i]
+                minSize = i + 1
                 break
+        print(minSize)
         #INPUT: Coordinates
         while(True): #Loop until we break
             coordinates = input("Where do u want your ship?")
@@ -121,39 +124,42 @@ def ShipSetupPlayer(playerBoard):
             x = temp[0].lower()
             y = temp[1].lower()
 
-            if x in alphabet or y in alphabet:
-                if IsNumber(x) == True or IsNumber(y) == True:
-                    #Coordinates consist of one number and one letter
-                    try:
-                        int(y)
-                    except ValueError:
-                        x, y = y, x
-                    #Make both integers for easier use in program
-                    x = alphabet.index(x) #Returns int
-                    y = int(y) #Returns int
-                    #Check if coordinate is empty
-                    if(playerBoard.hidden[x][y] != 0):
-                        continue
+            if x in alphabet and y in alphabet:
+                continue
+            if IsNumber(x) == True and IsNumber(y) == True:
+                continue
+            #Make sure x is first
+            try:
+                int(y)
+            except ValueError:
+                x, y = y, x
+            try:
+                alphabet.index(x)
+            except ValueError:
+                continue
+            #Make both integers for easier use in program
+            x = alphabet.index(x) + 1 #Returns int
+            y = int(y) #Returns int
+            #Check if coordinate is empty
+            if(playerBoard.hidden[x][y] != 0):
+                continue
             #Reset if no direction is valid for this coordinate
             if(playerBoard.check_ship(x, y, 1, 0, minSize) == False):
-                continue
-            if(playerBoard.check_ship(x, y, -1, 0, minSize) == False):
-                continue
-            if(playerBoard.check_ship(x, y, 0, 1, minSize) == False):
-                continue
-            if(playerBoard.check_ship(x, y, 0, -1, minSize) == False):
-                continue
+                if(playerBoard.check_ship(x, y, -1, 0, minSize) == False):
+                    if(playerBoard.check_ship(x, y, 0, 1, minSize) == False):
+                        if(playerBoard.check_ship(x, y, 0, -1, minSize) == False):
+                            continue
+            break
 
         #INPUT: Direction
         while(True):
             direction = input("UP/DOWN/LEFT/RIGHT")
             if(direction.lower() in ["up", "u"]):
-                #User said up
-                dirX = 0
-                dirY = -1
-            elif(direction.lower() in ["down", "d"]):
                 dirX = 0
                 dirY = 1
+            elif(direction.lower() in ["down", "d"]):
+                dirX = 0
+                dirY = -1
             elif(direction.lower() in ["left", "l"]):
                 dirX = -1
                 dirY = 0
@@ -161,27 +167,31 @@ def ShipSetupPlayer(playerBoard):
                 dirX = 1
                 dirY = 0
             else:
-                print("Input not understood")
+                print("Input not valid")
                 continue
 
             #Reset if minimum size of ship doesnt fit.
             if(playerBoard.check_ship(x, y, dirX, dirY, minSize) == False):
                 continue
+            break
 
         #INPUT: Size
         if(sum(playerBoard.shipArray) > 1):
             while(True):
                 size = input("Size of ship")
-                if(size not in playerBoard.shipArray):
+                try:
+                    size = int(size)
+                except ValueError:
                     continue
-                if(playerBoard.check_ship() == False):
+                if(playerBoard.shipArray[size-1] == 0):
+                    continue
+                if(playerBoard.check_ship(x, y, dirX, dirY, size) == False):
                     continue
                 break
         else:
-            index = playerBoard.shipArray.index(1)
-            size = playerBoard.shipArray[index]
+            size = minSize
 
-        #Place the ship
+        print("Placed a ship at: ",x,y,dirX,dirY,size)
         playerBoard.add_ship(x, y, dirX, dirY, size)
 
     print("Deployed ships")
