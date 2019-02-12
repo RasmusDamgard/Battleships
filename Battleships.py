@@ -46,33 +46,24 @@ class Board:
                 print(self.hidden[c][r], end=" ")
             print(" ")
 
-    def add_ship(self, x, y, dirX, dirY, size, checkFirst = True):
-        isValid = True
+    def check_ship(self, x, y, dirX, dirY, size):
         if(x + dirX * size > self.columns):
             print("Out of bounds")
-            return
+            return False
         if(y + dirY * size > self.rows):
             print("Out of bounds")
-            return
-        if(self.shipNum < 1):
-            print("All shipNum used")
-            return
+            return False
         for i in range(size):
-            if(checkFirst == True):
-                #If there is anything but water, its not valid.
-                if(self.hidden[x-1+i*dirX][y-1+i*dirY] > 0):
-                    isValid = False
-            else:
-                self.hidden[x-1+i*dirX][y-1+i*dirY] = self.shipNum
-        if(isValid == False):
-            print("Occupied")
-            return
-        if(checkFirst == True):
-            self.add_ship(x, y, dirX, dirY, size, False)
-        else:
-            self.shipNum -= 1
-            self.shipArray[size] -= 1
-            print("You succesfully placed a ship")
+            #If there is anything but water on any square, its not valid.
+            if(self.hidden[x-1+i*dirX][y-1-i*dirY] != 0):
+                return False
+        return True
+
+    def add_ship(self, x, y, dirX, dirY, size):
+        for i in range(size):
+            self.hidden[x-1+i*dirX][y-1-i*dirY] = self.shipNum
+        self.shipNum -= 1
+        self.shipArray[size] -= 1
 
     def fire(self, x, y):
         target = self.visible[x-1][y-1]
@@ -109,41 +100,90 @@ def GameLoop(sizeX = 10, sizeY = 10, shipArray = [0, 1, 2, 1, 1]):
     while(isRunning):
         PlayerTurn()
         ComputerTurn()
-    print("Game is over")
+    print("Game Over")
 
 def ShipSetupPlayer(playerBoard):
-    for i in range(playerBoard.shipNum):
-        isValid = False
+    for ships in range(playerBoard.shipNum):
         x = 1
         y = 1
-        while(isValid == False):
-            coords = input("Where do u want your ship?")
-            if len(coords) != 2:
-                isValid = False
+        minSize = 1
+        for i in range(playerBoard.shipNum):
+            if(playerBoard.shipArray[i] != 0):
+                minSize = playerBoard.shipArray[i]
+                break
+        #INPUT: Coordinates
+        while(True): #Loop until we break
+            coordinates = input("Where do u want your ship?")
+            #Reset if input doesnt have 2 characters
+            if len(coordinates) != 2:
                 continue
+            temp = list(coordinates)
+            x = temp[0].lower()
+            y = temp[1].lower()
 
-            coordsSplit = list(coords)
-            x = coordsSplit[0].lower()
-            y = coordsSplit[1].lower()
-
-            print("Had two letters:", x, y)
-
-            
             if x in alphabet or y in alphabet:
                 if IsNumber(x) == True or IsNumber(y) == True:
+                    #Coordinates consist of one number and one letter
                     try:
-                        int(y)    
+                        int(y)
                     except ValueError:
-                        x, y = y, x   
-                    x = alphabet.index(x)
-                    y = int(y)
-                    print("Placed a ship")
-                    break
-                print("Was in the alphabet")
-            continue
+                        x, y = y, x
+                    #Make both integers for easier use in program
+                    x = alphabet.index(x) #Returns int
+                    y = int(y) #Returns int
+                    #Check if coordinate is empty
+                    if(playerBoard.hidden[x][y] != 0):
+                        continue
+            #Reset if no direction is valid for this coordinate
+            if(playerBoard.check_ship(x, y, 1, 0, minSize) == False):
+                continue
+            if(playerBoard.check_ship(x, y, -1, 0, minSize) == False):
+                continue
+            if(playerBoard.check_ship(x, y, 0, 1, minSize) == False):
+                continue
+            if(playerBoard.check_ship(x, y, 0, -1, minSize) == False):
+                continue
 
-        #Add ship
-        
+        #INPUT: Direction
+        while(True):
+            direction = input("UP/DOWN/LEFT/RIGHT")
+            if(direction.lower() in ["up", "u"]):
+                #User said up
+                dirX = 0
+                dirY = -1
+            elif(direction.lower() in ["down", "d"]):
+                dirX = 0
+                dirY = 1
+            elif(direction.lower() in ["left", "l"]):
+                dirX = -1
+                dirY = 0
+            elif(direction.lower() in ["right", "r"]):
+                dirX = 1
+                dirY = 0
+            else:
+                print("Input not understood")
+                continue
+
+            #Reset if minimum size of ship doesnt fit.
+            if(playerBoard.check_ship(x, y, dirX, dirY, minSize) == False):
+                continue
+
+        #INPUT: Size
+        if(sum(playerBoard.shipArray) > 1):
+            while(True):
+                size = input("Size of ship")
+                if(size not in playerBoard.shipArray):
+                    continue
+                if(playerBoard.check_ship() == False):
+                    continue
+                break
+        else:
+            index = playerBoard.shipArray.index(1)
+            size = playerBoard.shipArray[index]
+
+        #Place the ship
+        playerBoard.add_ship(x, y, dirX, dirY, size)
+
     print("Deployed ships")
 
 
