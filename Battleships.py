@@ -35,6 +35,11 @@ class Board:
         self.rows = rows
         self.shipArray = shipArray
         self.shipNum = sum(self.shipArray)
+        self.minSize = 0
+        for i in range(len(shipArray)):
+            if(shipArray[i] != 0):
+                minSize = i + 1
+                break
 
     def draw_visible(self):
         for r in range(self.rows):
@@ -80,13 +85,15 @@ class Board:
         y -= 1
         target = self.visible[x][y]
         #Checks if there has already been fired at this square.
-        if(target == 0): #Have not fired before.
+        if(target == 0): #Have not fired here before.
             hit = self.hidden[x][y]
             #Checks what was hit.
             if(hit == 0): #Water
+                #Update information in array.
                 self.visible[x][y] = 1
                 print("Miss!")
-            else: #A ship
+            else: #Ship
+                #Update both arrays
                 self.visible[x][y] = 2
                 typeHit = self.hidden[x][y]
                 self.hidden[x][y] += 10
@@ -136,20 +143,19 @@ def ShipSetup(selectedB, isPlayer):
     for ships in range(selectedB.shipNum):
         x = 1
         y = 1
-        minSize = 1
         for i in range(len(selectedB.shipArray)):
             if(selectedB.shipArray[i] != 0):
-                minSize = i + 1
+                selectedB.minSize = i + 1
                 break
 
         #INPUT: Coordinates
         x,y = SetCoords(selectedB, isPlayer, minSize)
 
         #INPUT: Direction
-        dirX, dirY = SetDirection(selectedB, isPlayer, minSize, x, y)
+        dirX, dirY = SetDirection(selectedB, isPlayer, x, y)
 
         #INPUT: Size
-        size = SetSize(selectedB, isPlayer, minSize, x, y, dirX, dirY)
+        size = SetSize(selectedB, isPlayer, x, y, dirX, dirY)
 
         print("")
         selectedB.add_ship(x, y, dirX, dirY, size)
@@ -216,7 +222,7 @@ def SetCoords(selectedB, isPlayer, minSize):
         break
     return x, y
 
-def SetDirection(selectedB, isPlayer, minSize, x, y):
+def SetDirection(selectedB, isPlayer, x, y):
     while(True):
         if(isPlayer):
             direction = input("UP/DOWN/LEFT/RIGHT")
@@ -240,12 +246,12 @@ def SetDirection(selectedB, isPlayer, minSize, x, y):
             continue
 
         #Reset if minimum size of ship doesnt fit.
-        if(selectedB.check_ship(x, y, dirX, dirY, minSize) == False):
+        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize) == False):
             continue
         break
     return dirX, dirY
 
-def SetSize(selectedB, isPlayer, minSize, x, y, dirX, dirY):
+def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
     if(sum(selectedB.shipArray) > 1):
         while(True):
             if(isPlayer):
@@ -264,12 +270,12 @@ def SetSize(selectedB, isPlayer, minSize, x, y, dirX, dirY):
                 continue
             if(selectedB.shipArray[size - 1] == 0):
                 continue
-            if(selectedB.check_ship(x, y, dirX, dirY, size) == False):
+            if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize) == False):
                 continue
             break
     else:
         print("only one size")
-        size = minSize
+        size = selectedB.minSize
 
     return size
 
