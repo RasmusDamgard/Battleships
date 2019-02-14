@@ -141,8 +141,8 @@ def ShipSetup(selectedB, isPlayer):
             if(selectedB.shipArray[i] != 0):
                 minSize = i + 1
                 break
-            
-        #INPUT: Coordinates   
+
+        #INPUT: Coordinates
         x,y = SetCoords(selectedB, isPlayer, minSize)
 
         #INPUT: Direction
@@ -170,32 +170,40 @@ def ComputerTurn():
 def SetCoords(selectedB, isPlayer, minSize):
     x = 1
     y = 1
-    #INPUT: Coordinates
-    while(True): #Loop until we break
+    #INPUT: Coordinates.
+    while(True): #Used as goto with continue keyword.
         if(isPlayer):
             coordinates = input("Where do u want your ship?")
         else:
             x = random.choice(alphabet)
             y = str(random.randint(1, 9))
             coordinates = x + y
-            
-        if CheckCoords(coordinates) == False:
+
+        #Reset if input doesnt have 2 characters
+        if len(coordinates) != 2:
             continue
-        
         temp = list(coordinates)
         x = temp[0].lower()
         y = temp[1].lower()
-        
+        if x not in alphabet and x not in numbers:
+            continue
+        if y not in alphabet and y not in numbers:
+            continue
+        if x in alphabet and y in alphabet:
+            continue
+        if x in numbers and y in numbers:
+            continue
+
         #Make sure x is first
         try:
             int(y)
         except ValueError:
             x, y = y, x
-    
+
         #Make both integers for easier use in program
         x = alphabet.index(x) + 1 #Returns int
         y = int(y) #Returns int
-            
+
         #Check if coordinate is empty
         if(selectedB.hidden[x-1][y-1] != 0):
             continue
@@ -207,24 +215,6 @@ def SetCoords(selectedB, isPlayer, minSize):
                         continue
         break
     return x, y
-    
-
-def CheckCoords(coordinates):
-    #Reset if input doesnt have 2 characters
-    if len(coordinates) != 2:
-        return False
-    temp = list(coordinates)
-    x = temp[0].lower()
-    y = temp[1].lower()
-    if x not in alphabet and x not in numbers:
-        return False
-    if y not in alphabet and y not in numbers:
-        return False
-    if x in alphabet and y in alphabet:
-        return False
-    if x in numbers and y in numbers:
-        return False
-    return True
 
 def SetDirection(selectedB, isPlayer, minSize, x, y):
     while(True):
