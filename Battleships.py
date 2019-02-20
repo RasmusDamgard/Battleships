@@ -18,7 +18,8 @@ import random
 # Declare and initiate PyGame Mixer.
 mixer.init()
 
-alphabet = ["a","b","c","d","e","g","h","i","j"]
+#Global constants
+alphabet = ["a","b","c","d","e","f","g","h","i"]
 numbers = ["1","2","3","4","5","6","7","8","9"]
 
 ###
@@ -35,7 +36,8 @@ class Board:
         self.rows = rows
         self.shipArray = shipArray
         self.shipNum = sum(self.shipArray)
-        self.minSize = 0
+        self.shipNumMax = self.shipNum
+        self.minSize = 1
         for i in range(len(shipArray)):
             if(shipArray[i] != 0):
                 minSize = i + 1
@@ -56,17 +58,17 @@ class Board:
     def check_ship(self, x, y, dirX, dirY, size):
         x -= 1
         y -= 1
-        lastX = x + dirX * (size-1)
-        lastY = y + dirY * (size-1)
-        if(0 > lastX or lastX > self.columns):
+        lastX = x + dirX * (size - 1)
+        lastY = y + dirY * (size - 1)
+        if(0 > lastX or lastX > self.columns -1):
             print("Out of bounds")
             return False
-        if(0 > lastY or lastY > self.rows):
+        if(0 > lastY or lastY > self.rows -1):
             print("Out of bounds")
             return False
         for i in range(size):
             #If there is anything but water on any square, its not valid.
-            if(self.hidden[x + i * dirX][y + i * dirY] != 0):
+            if(self.hidden[x + dirX * i][y + dirY * i] != 0):
                 print("Occupied")
                 return False
         return True
@@ -79,31 +81,7 @@ class Board:
         self.shipNum -= 1
         self.shipArray[size - 1] -= 1
 
-    def fire(self, x, y):
-        #Go from coordinate to index in array.
-        x -= 1
-        y -= 1
-        target = self.visible[x][y]
-        #Checks if there has already been fired at this square.
-        if(target == 0): #Have not fired here before.
-            hit = self.hidden[x][y]
-            #Checks what was hit.
-            if(hit == 0): #Water
-                #Update information in array.
-                self.visible[x][y] = 1
-                print("Miss!")
-            else: #Ship
-                #Update both arrays
-                self.visible[x][y] = 2
-                typeHit = self.hidden[x][y]
-                self.hidden[x][y] += 10
-                print("Hit!")
-                self.check_destroyed(typeHit)
-        else: #Have already fired here.
-            print("Already fired here")
-
     def check_destroyed(self, typeHit):
-        print("")
         if(any(typeHit in sublist for sublist in self.hidden) == False):
             for c in range(self.columns):
                 for r in range(self.rows):
@@ -111,7 +89,14 @@ class Board:
                         self.visible[r][c] = 3
             print("Destroyed a ship")
 
-def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 2, 1, 1], array1 = [0, 1, 2, 1, 1]):
+    def check_game_over(self):
+        isGameOver = True
+        for i in range (1, self.shipNumMax + 1):
+            if(any(i in sublist for sublist in self.hidden) == True):
+                isGameOver = False
+        return isGameOver
+
+def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 0, 0, 0], array1 = [0, 1, 0, 0, 0]):
     playerBoard = Board(sizeX, sizeY, array)
     computerBoard = Board(sizeX, sizeY, array1)
     playerBoard.draw_hidden()
@@ -132,24 +117,35 @@ def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 2, 1, 1], array1 = [0, 1, 2, 1
         print("")
         print("Computer_visible")
         computerBoard.draw_visible()
-        PlayerTurn()
-        ComputerTurn()
-        #Infinite loop right now
-        if(input("break?") == "y"):
+        print("")
+        #Playerturn
+        TakeTurn(computerBoard, True)
+        #Computerturn
+        TakeTurn(playerBoard, False)
+
+        #Check if game is over and determine winner.
+        if(computerBoard.check_game_over() == True):
+            if(playerBoard.check_game_over() == True):
+                print("Game Over. It's a tie!")
+            else:
+                print("Game Over. You won!")
             break
-    print("Game Over")
+        elif(playerBoard.check_game_over() == True):
+            print("Game Over. You lost!")
+            break
 
 def ShipSetup(selectedB, isPlayer):
     for ships in range(selectedB.shipNum):
         x = 1
         y = 1
+        minSize = 1
         for i in range(len(selectedB.shipArray)):
             if(selectedB.shipArray[i] != 0):
                 selectedB.minSize = i + 1
                 break
 
         #INPUT: Coordinates
-        x,y = SetCoords(selectedB, isPlayer, minSize)
+        x,y = SetCoords(selectedB, isPlayer)
 
         #INPUT: Direction
         dirX, dirY = SetDirection(selectedB, isPlayer, x, y)
@@ -165,24 +161,76 @@ def ShipSetup(selectedB, isPlayer):
 
     print("Deployed ships")
 
+def TakeTurn(selectedB, isPlayer):
+    x = 1
+    y = 1
+    while(True):
+        if(isPlayer):
+            coordinates = input("Where do you want to fire?")
+        else:
+            x = random.choice(alphabet)
+            y = random.choice(numbers)
+            coordinates = x + y
 
+        #Reset if input doesnt have 2 characters
+        if len(coordinates) != 2:
+            continue
+        temp = list(coordinates)
+        x = temp[0].lower()
+        y = temp[1].lower()
+        if x not in alphabet and x not in numbers:
+            continue
+        if y not in alphabet and y not in numbers:
+            continue
+        if x in alphabet and y in alphabet:
+            continue
+        if x in numbers and y in numbers:
+            continue
 
-def PlayerTurn():
-    pass
+        #Make sure x is first
+        try:
+            int(y)
+        except ValueError:
+            x, y = y, x
 
-def ComputerTurn():
-    pass
+        #Make both integers for easier use in program
+        x = alphabet.index(x) + 1 #Returns int
+        y = numbers.index(y) + 1 #Returns int
 
-def SetCoords(selectedB, isPlayer, minSize):
+        #Go from coordinate to index in array.
+        x -= 1
+        y -= 1
+
+        if(selectedB.visible[x][y] > 0):
+            #Already fired here
+            continue
+
+        #Checks what was hit.
+        if(selectedB.hidden[x][y] == 0): #Hit water.
+            #Update information in array.
+            selectedB.visible[x][y] = 1
+            print("Miss!")
+        else: #Hit ship.
+            #Update both arrays
+            selectedB.visible[x][y] = 2
+            typeHit = selectedB.hidden[x][y]
+            selectedB.hidden[x][y] += 10
+            print("Hit!")
+            #Check if a ship was destroyed
+            selectedB.check_destroyed(typeHit)
+        #Break out of loop
+        break
+
+def SetCoords(selectedB, isPlayer):
     x = 1
     y = 1
     #INPUT: Coordinates.
     while(True): #Used as goto with continue keyword.
         if(isPlayer):
-            coordinates = input("Where do u want your ship?")
+            coordinates = input("Where do you want your ship?")
         else:
             x = random.choice(alphabet)
-            y = str(random.randint(1, 9))
+            y = random.choice(numbers)
             coordinates = x + y
 
         #Reset if input doesnt have 2 characters
@@ -214,10 +262,10 @@ def SetCoords(selectedB, isPlayer, minSize):
         if(selectedB.hidden[x-1][y-1] != 0):
             continue
         #Reset if no direction is valid for this coordinate
-        if(selectedB.check_ship(x, y, 1, 0, minSize) == False):
-            if(selectedB.check_ship(x, y, -1, 0, minSize) == False):
-                if(selectedB.check_ship(x, y, 0, 1, minSize) == False):
-                    if(selectedB.check_ship(x, y, 0, -1, minSize) == False):
+        if(selectedB.check_ship(x, y, 1, 0, selectedB.minSize) == False):
+            if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize) == False):
+                if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize) == False):
+                    if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize) == False):
                         continue
         break
     return x, y
@@ -257,8 +305,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             if(isPlayer):
                 size = input("Size of ship")
             else:
-                size = str(random.randint(1,len(selectedB.shipArray)+1))
-                print("Size: ", size)
+                size = str(random.randint(1,len(selectedB.shipArray)))
 
             try:
                 size = int(size)
@@ -270,7 +317,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
                 continue
             if(selectedB.shipArray[size - 1] == 0):
                 continue
-            if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize) == False):
+            if(selectedB.check_ship(x, y, dirX, dirY, size) == False):
                 continue
             break
     else:
@@ -279,11 +326,12 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
 
     return size
 
-###
-### Code for execution
-###
+def CheckGameOver(selectedB):
 
+    pass
+
+#Start the game
 GameLoop()
 
-# Prevent game from closing.
+#Prevent game from closing instantly.
 input("Exit Game?")
