@@ -56,8 +56,6 @@ class Board:
             print(" ")
 
     def check_ship(self, x, y, dirX, dirY, size, isPlayer):
-        x -= 1
-        y -= 1
         lastX = x + dirX * (size - 1)
         lastY = y + dirY * (size - 1)
         if(0 > lastX or lastX > self.columns -1):
@@ -80,8 +78,6 @@ class Board:
         return True
 
     def add_ship(self, x, y, dirX, dirY, size):
-        x -= 1
-        y -= 1
         for i in range(size):
             self.hidden[x + i * dirX][y + i * dirY] = self.shipNum
         self.shipNum -= 1
@@ -105,7 +101,7 @@ class Board:
                 isGameOver = False
         return isGameOver
 
-def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 2, 1, 1], array1 = [0, 1, 2, 1, 1]):
+def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 0, 0, 1], array1 = [0, 1, 0, 0, 1]):
     playerBoard = Board(sizeX, sizeY, array)
     computerBoard = Board(sizeX, sizeY, array1)
     playerBoard.draw_hidden()
@@ -115,18 +111,20 @@ def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 2, 1, 1], array1 = [0, 1, 2, 1
     while(True):
         print("NEW TURN")
         print("")
-        print("Player_hidden")
-        playerBoard.draw_hidden()
+        print("Computer_hidden")
+        computerBoard.draw_hidden()
         print("")
         print("Player_visible")
         playerBoard.draw_visible()
         print("")
-        print("Computer_hidden")
-        computerBoard.draw_hidden()
+        print("Player_hidden")
+        playerBoard.draw_hidden()
         print("")
         print("Computer_visible")
         computerBoard.draw_visible()
         print("")
+
+
         #Playerturn
         TakeTurn(computerBoard, True)
         #Computerturn
@@ -145,23 +143,19 @@ def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 2, 1, 1], array1 = [0, 1, 2, 1
 
 def ShipSetup(selectedB, isPlayer):
     for ships in range(selectedB.shipNum):
-        x = 1
-        y = 1
+        x = 0
+        y = 0
         minSize = 1
         for i in range(len(selectedB.shipArray)):
             if(selectedB.shipArray[i] != 0):
                 selectedB.minSize = i + 1
                 break
-
         #INPUT: Coordinates
         x,y = SetCoords(selectedB, isPlayer)
-
         #INPUT: Direction
         dirX, dirY = SetDirection(selectedB, isPlayer, x, y)
-
         #INPUT: Size
         size = SetSize(selectedB, isPlayer, x, y, dirX, dirY)
-
         print("")
         selectedB.add_ship(x, y, dirX, dirY, size)
         selectedB.draw_hidden()
@@ -170,8 +164,8 @@ def ShipSetup(selectedB, isPlayer):
     print("Deployed ships")
 
 def TakeTurn(selectedB, isPlayer):
-    x = 1
-    y = 1
+    x = 0
+    y = 0
     while(isPlayer):
         #Voicefeedback: Prompt fire coords
         coordinates = input("Where do you want to fire?")
@@ -182,13 +176,12 @@ def TakeTurn(selectedB, isPlayer):
 
         x,y = ConvertCoords(coordinates)
 
-
         if(selectedB.visible[x][y] > 0):
             print("Not valid: You have already fired here")
             continue
 
         #We know that firing coordinates are valid
-        print("You fired at:")
+        print("You fired at: ", x, "; ", y)
 
         #Checks what was hit.
         if(selectedB.hidden[x][y] == 0): #Hit water.
@@ -202,7 +195,7 @@ def TakeTurn(selectedB, isPlayer):
             selectedB.hidden[x][y] += 10
             print("You hit!")
             #Check if a ship was destroyed
-            selectedB.check_destroyed(typeHit)
+            selectedB.check_destroyed(typeHit, True)
         #Break out of loop
         break
 
@@ -234,75 +227,63 @@ def TakeTurn(selectedB, isPlayer):
             selectedB.visible[x][y] = 2
             typeHit = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
-            print("Eneny hit your ships!")
+            print("Enemy hit your ships!")
             #Check if a ship was destroyed
             selectedB.check_destroyed(typeHit, False)
         #Break out of loop
         break
 
 def SetCoords(selectedB, isPlayer):
-    x = 1
-    y = 1
+    x = 0
+    y = 0
     #INPUT: Coordinates.
-    #TODO: Split whileloop
-    while(True): #Used as goto with continue keyword.
-        if(isPlayer):
-            coordinates = input("Where do you want your ship?")
-        else:
-            x = random.choice(alphabet)
-            y = random.choice(numbers)
-            coordinates = x + y
+    while(isPlayer): #Used as goto with continue keyword.
+        coordinates = input("Where do you want your ship?")
 
         #Reset if input doesnt have 2 characters
-        if len(coordinates) != 2:
-            print("Not valid: Too long input")
-            continue
-        temp = list(coordinates)
-        x = temp[0].lower()
-        y = temp[1].lower()
-        if x not in alphabet and x not in numbers:
-            print("Coords arent valid")
-            continue
-        if y not in alphabet and y not in numbers:
-            print("Coords arent valid")
-            continue
-        if x in alphabet and y in alphabet:
-            print("Coords arent valid")
-            continue
-        if x in numbers and y in numbers:
-            print("Coords arent valid")
+        if(CheckCoords(coordinates, isPlayer) == False):
             continue
 
-        #Make sure x is first
-        try:
-            int(y)
-        except ValueError:
-            x, y = y, x
-
-        #Make both integers for easier use in program
-        x = alphabet.index(x) + 1 #Returns int
-        y = int(y) #Returns int
+        x, y = ConvertCoords(coordinates)
 
         #Check if coordinate is empty
-        if(selectedB.hidden[x-1][y-1] != 0):
+        if(selectedB.hidden[x][y] != 0):
             print("Not Valid: You already have a ship here.")
             continue
         #Reset if no direction is valid for this coordinate
-        if(selectedB.check_ship(x, y, 1, 0, selectedB.minSize, 0) == False):
-            if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize, 0) == False):
-                if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, 0) == False):
-                    if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, 0) == False):
+        if(selectedB.check_ship(x, y, 1, 0, selectedB.minSize, False) == False):
+            if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize, False) == False):
+                if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, False) == False):
+                    if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, False) == False):
                         print("Not Valid: Not enouogh space for a ship.")
+                        continue
+        break
+
+    while(isPlayer == False):
+        x = random.choice(alphabet)
+        y = random.choice(numbers)
+        coordinates = x + y
+        #Reset if input doesnt have 2 characters
+        if(CheckCoords(coordinates, False) == False):
+            continue
+
+        x, y = ConvertCoords(coordinates)
+
+        #Check if coordinate is empty
+        if(selectedB.hidden[x][y] != 0):
+            continue
+        #Reset if no direction is valid for this coordinate
+        if(selectedB.check_ship(x, y, 1, 0, selectedB.minSize, False) == False):
+            if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize, False) == False):
+                if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, False) == False):
+                    if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, False) == False):
                         continue
         break
     return x, y
 
 def SetDirection(selectedB, isPlayer, x, y):
-    while(True):
-        if(isPlayer):
-            direction = input("UP/DOWN/LEFT/RIGHT")
-        else:
-            direction = random.choice(["up","down","left","right"])
+    while(isPlayer):
+        direction = input("UP/DOWN/LEFT/RIGHT")
 
         if(direction.lower() in ["up", "u"]):
             dirX = 0
@@ -321,19 +302,40 @@ def SetDirection(selectedB, isPlayer, x, y):
             continue
 
         #Reset if minimum size of ship doesnt fit.
-        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize) == False):
-            print("Not Valid: not enough space for a ship")
+        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, True) == False):
+            print("Not Valid: Not enough space in this direction")
             continue
         break
+
+    while(isPlayer == False):
+        direction = random.choice(["up","down","left","right"])
+        if(direction.lower() in ["up", "u"]):
+            dirX = 0
+            dirY = -1
+        elif(direction.lower() in ["down", "d"]):
+            dirX = 0
+            dirY = 1
+        elif(direction.lower() in ["left", "l"]):
+            dirX = -1
+            dirY = 0
+        elif(direction.lower() in ["right", "r"]):
+            dirX = 1
+            dirY = 0
+        else:
+            print("Input not valid")
+            continue
+
+        #Reset if minimum size of ship doesnt fit.
+        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, True) == False):
+            print("Not Valid: Not enough space in this direction")
+            continue
+        break
+
     return dirX, dirY
 
 def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
-    while(True):
-        if(isPlayer):
-            size = input("Size of ship")
-        else:
-            size = str(random.randint(1,len(selectedB.shipArray)))
-
+    while(isPlayer):
+        size = input("Size of ship")
         try:
             size = int(size)
         except ValueError:
@@ -352,6 +354,24 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             print("Not Valid: Choose a smaller size")
             continue
         break
+
+    while(isPlayer == False):
+        size = str(random.randint(1,len(selectedB.shipArray)))
+        try:
+            size = int(size)
+        except ValueError:
+            continue
+        #Does a ship of specified size exist (is it below 5 in size)
+        try:
+            selectedB.shipArray[size - 1]
+        except IndexError:
+            continue
+        if(selectedB.shipArray[size - 1] == 0):
+            continue
+        if(selectedB.check_ship(x, y, dirX, dirY, size, 1) == False):
+            continue
+        break
+
     return size
 
 def CheckCoords(coordinates, isPlayer):
@@ -379,6 +399,7 @@ def CheckCoords(coordinates, isPlayer):
         if(isPlayer):
             print("Not Valid: invalid characters")
         return False
+
     return True
 
 def ConvertCoords(coordinates):
@@ -393,12 +414,9 @@ def ConvertCoords(coordinates):
         x, y = y, x
 
     #Make both integers for easier use in program
-    x = alphabet.index(x) + 1 #Returns int
-    y = numbers.index(y) + 1 #Returns int
+    x = alphabet.index(x) #Returns int
+    y = numbers.index(y) #Returns int
 
-    #Go from coordinate to index in array.
-    x -= 1
-    y -= 1
     return x, y
 
 #Start the game
