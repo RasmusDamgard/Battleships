@@ -162,6 +162,7 @@ def ShipSetup(selectedB, isPlayer):
         selectedB.add_ship(x, y, dirX, dirY, size)
         selectedB.draw_hidden()
         print("Placed a ship, at: ", x, y, dirX, dirY, size)
+        
 
     print("Deployed ships")
 
@@ -422,6 +423,13 @@ def ConvertCoords(coordinates):
     return x, y
 
 #Start the game
+mixer.music.load('audio/1.wav')
+
+
+mixer.music.queue('audio/a.wav')
+mixer.music.play()
+
+
 GameLoop()
 
 #Prevent game from closing instantly.
