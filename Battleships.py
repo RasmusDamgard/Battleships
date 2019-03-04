@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 from pygame import mixer
 import random
+import wave
 
 ###
 ### Variables and modules
@@ -162,7 +163,7 @@ def ShipSetup(selectedB, isPlayer):
         selectedB.add_ship(x, y, dirX, dirY, size)
         selectedB.draw_hidden()
         print("Placed a ship, at: ", x, y, dirX, dirY, size)
-        
+
 
     print("Deployed ships")
 
@@ -422,12 +423,22 @@ def ConvertCoords(coordinates):
 
     return x, y
 
+def GetAudioDuration(audioPath):
+    wr = wave.open("audio/" + audioPath + ".wav", "r")
+    frames = wr.getnframes()
+    frameRate = wr.getframerate()
+    duration = frames / frameRate
+    return duration
+
+
 #Start the game
 mixer.music.load('audio/1.wav')
 
 
 mixer.music.queue('audio/a.wav')
 mixer.music.play()
+
+GetAudioDuration("coordinates")
 
 
 GameLoop()
