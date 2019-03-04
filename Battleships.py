@@ -11,6 +11,7 @@
 from pygame import mixer
 import random
 import wave
+import time
 
 ###
 ### Variables and modules
@@ -432,15 +433,13 @@ def GetAudioDuration(audioPath):
 
 
 #Start the game
-mixer.music.load('audio/1.wav')
-
-
-mixer.music.queue('audio/a.wav')
+mixer.music.load('audio/a.wav')
 mixer.music.play()
 
-GetAudioDuration("coordinates")
-
-
+dur = GetAudioDuration("a")
+time.sleep(dur)
+mixer.music.load('audio/1.wav')
+mixer.music.play()
 GameLoop()
 
 #Prevent game from closing instantly.
