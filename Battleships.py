@@ -278,7 +278,7 @@ def SetCoords(selectedB, isPlayer):
     y = 0
     #INPUT: Coordinates.
     while(isPlayer): #Used as goto with continue keyword.
-        PlayAudio("q_next_ship", False)
+        PlayAudio("q_coordinates", False)
         #TODO: Change next/first ship into universal audio
         coordinates = input("Where do you want your ship?")
 
