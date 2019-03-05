@@ -330,8 +330,8 @@ def SetCoords(selectedB, isPlayer):
 
 def SetDirection(selectedB, isPlayer, x, y):
     while(isPlayer):
-        direction = input("UP/DOWN/LEFT/RIGHT")
         PlayAudio("q_direction", False)
+        direction = input("UP/DOWN/LEFT/RIGHT")
         if(direction.lower() in ["up", "u"]):
             dirX = 0
             dirY = -1
@@ -379,7 +379,7 @@ def SetDirection(selectedB, isPlayer, x, y):
             dirY = 0
 
         #Reset if minimum size of ship doesnt fit.
-        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, True) == False):
+        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, False) == False):
             continue
         break
 
@@ -408,7 +408,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             PlayAudio("i_no_ships_size")
             PlayAudio(str(size))
             continue
-        if(selectedB.check_ship(x, y, dirX, dirY, size, 1) == False):
+        if(selectedB.check_ship(x, y, dirX, dirY, size, True) == False):
             print("Not Valid: Choose a smaller size")
             #TODO: Choose a smaller size
             continue
@@ -427,7 +427,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             continue
         if(selectedB.shipArray[size - 1] == 0):
             continue
-        if(selectedB.check_ship(x, y, dirX, dirY, size, 1) == False):
+        if(selectedB.check_ship(x, y, dirX, dirY, size, False) == False):
             continue
         break
 
