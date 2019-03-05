@@ -101,7 +101,7 @@ class Board:
                 PlayAudio("i_destroyed_ship")
             elif(isPlayer == False):
                 print("Enemy has destroyed one of your ships")
-                #TODO: "Enemy destroyed ship"
+                PlayAudio("i_enemy_destroyed")
 
     def check_game_over(self):
         isGameOver = True
@@ -186,14 +186,14 @@ def ShipSetup(selectedB, isPlayer):
             PlayAudio(str(size))
     if(isPlayer):
         print("Deployed ships")
-        #TODO: "ALL ships deployed"
+        PlayAudio("i_all_ships_deploy")
 
 def TakeTurn(selectedB, isPlayer):
     x = 0
     y = 0
     while(isPlayer):
         #Voicefeedback: Prompt fire coords
-        #TODO: "Where to fire"
+        PlayAudio("q_fire")
         coordinates = input("Where do you want to fire?")
 
         if(CheckCoords(coordinates, isPlayer) == False):
@@ -211,7 +211,7 @@ def TakeTurn(selectedB, isPlayer):
 
         #We know that firing coordinates are valid
         print("You fired at: ", x, "; ", y)
-        #TODO: "You selected, "
+        PlayAudio("i_selected")
         PlayAudio(alphabet[x])
         PlayAudio(numbers[y])
 
@@ -227,7 +227,6 @@ def TakeTurn(selectedB, isPlayer):
             typeHit = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
             print("You hit!")
-            #TODO: change "i_hit" to not mention coords
             PlayAudio("i_hit")
             #Check if a ship was destroyed
             selectedB.check_destroyed(typeHit, True)
@@ -251,7 +250,7 @@ def TakeTurn(selectedB, isPlayer):
 
         #We know that firing coordinates are valid
         print("Your enemy fired at:")
-        #TODO: "Enemy fired, at"
+        PlayAudio("i_enemy_fire")
         PlayAudio(alphabet[x])
         PlayAudio(numbers[y])
 
@@ -260,14 +259,14 @@ def TakeTurn(selectedB, isPlayer):
             #Update information in array.
             selectedB.visible[x][y] = 1
             print("Enemy missed your ships!")
-            #TODO: "Enemy missed ship"
+            PlayAudio("i_enemy_miss")
         else: #Hit ship.
             #Update both arrays
             selectedB.visible[x][y] = 2
             typeHit = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
             print("Enemy hit your ships!")
-            #TODO: "Enemy hit ship"
+            PlayAudio("i_enemy_hit")
             #Check if a ship was destroyed
             selectedB.check_destroyed(typeHit, False)
         #Break out of loop
@@ -279,7 +278,6 @@ def SetCoords(selectedB, isPlayer):
     #INPUT: Coordinates.
     while(isPlayer): #Used as goto with continue keyword.
         PlayAudio("q_coordinates", False)
-        #TODO: Change next/first ship into universal audio
         coordinates = input("Where do you want your ship?")
 
         #Reset if input doesnt have 2 characters
@@ -287,7 +285,7 @@ def SetCoords(selectedB, isPlayer):
             continue
 
         x, y = ConvertCoords(coordinates)
-        #TODO: "You selected ,"
+        PlayAudio("i_selected")
         PlayAudio(alphabet[x])
         PlayAudio(numbers[y])
 
@@ -302,7 +300,7 @@ def SetCoords(selectedB, isPlayer):
                 if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, False) == False):
                     if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, False) == False):
                         print("Not Valid: Not enouogh space for a ship.")
-                        #TODO: "No space for ship"
+                        PlayAudio("i_no_space")
                         continue
         break
 
@@ -335,22 +333,22 @@ def SetDirection(selectedB, isPlayer, x, y):
         if(direction.lower() in ["up", "u"]):
             dirX = 0
             dirY = -1
-            #TODO: "You selected,
+            PlayAudio("i_selected")
             PlayAudio("i_up")
         elif(direction.lower() in ["down", "d"]):
             dirX = 0
             dirY = 1
-            #TODO: "You selected,
+            PlayAudio("i_selected")
             PlayAudio("i_down")
         elif(direction.lower() in ["left", "l"]):
             dirX = -1
             dirY = 0
-            #TODO: "You selected,
+            PlayAudio("i_selected")
             PlayAudio("i_left")
         elif(direction.lower() in ["right", "r"]):
             dirX = 1
             dirY = 0
-            #TODO: "You selected,
+            PlayAudio("i_selected")
             PlayAudio("i_right")
         else:
             print("Input not valid")
@@ -400,7 +398,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             selectedB.shipArray[size - 1]
         except IndexError:
             print("Not valid: Ship of this size does not exist")
-            #TODO: "A ship of this size does not exist" (NO MENTION OF ACTUAL SIZE)
+            PlayAudio("i_no_exist_ship")
             #PlayAudio("")
             continue
         if(selectedB.shipArray[size - 1] == 0):
@@ -410,7 +408,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             continue
         if(selectedB.check_ship(x, y, dirX, dirY, size, True) == False):
             print("Not Valid: Choose a smaller size")
-            #TODO: Choose a smaller size
+            PlayAudio("i_choose_smaller")
             continue
         break
 
