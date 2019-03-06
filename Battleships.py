@@ -10,6 +10,7 @@
 #-------------------------------------------------------------------------------
 from pygame import mixer
 import random
+import wave
 import time
 mixer.init()
 
