@@ -10,21 +10,12 @@
 #-------------------------------------------------------------------------------
 from pygame import mixer
 import random
-import wave
 import time
-
-###
-### Variables and modules
-###
-
-# Declare and initiate PyGame Mixer.
 mixer.init()
 
 #Global constants
 alphabet = ["a","b","c","d","e","f","g","h","i"]
 numbers = ["1","2","3","4","5","6","7","8","9"]
-
-###audioFile = alphabet[x]+".wav"
 
 ###
 ### Classes & Functions
@@ -132,7 +123,6 @@ def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 0, 0, 1], array1 = [0, 1, 0, 0
         print("Computer_visible")
         computerBoard.draw_visible()
         print("")
-
 
         #Playerturn
         TakeTurn(computerBoard, True)
