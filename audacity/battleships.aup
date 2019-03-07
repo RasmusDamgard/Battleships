@@ -1,6 +1,6 @@
 <?xml version="1.0" standalone="no" ?>
 <!DOCTYPE project PUBLIC "-//audacityproject-1.3.0//DTD//EN" "http://audacity.sourceforge.net/xml/audacityproject-1.3.0.dtd" >
-<project xmlns="http://audacity.sourceforge.net/xml/" projname="battleships_data" version="1.3.0" audacityversion="2.2.2" sel0="0.5550566118" sel1="0.5550566118" vpos="0" h="0.0000000000" zoom="439.5947995297" rate="44100.0" snapto="off" selectionformat="tt:mm:ss + millisekunder" frequencyformat="Hz" bandwidthformat="oktaver">
+<project xmlns="http://audacity.sourceforge.net/xml/" projname="battleships_data" version="1.3.0" audacityversion="2.2.2" sel0="13.6198562449" sel1="13.6198562449" vpos="6160" h="0.0000000000" zoom="23.0545751992" rate="44100.0" snapto="off" selectionformat="tt:mm:ss + millisekunder" frequencyformat="Hz" bandwidthformat="oktaver">
 	<tags>
 		<tag name="YEAR" value="2018"/>
 		<tag name="ALBUM" value="Stemmeoptager"/>
@@ -18,7 +18,7 @@
 			<envelope numpoints="0"/>
 		</waveclip>
 	</wavetrack>
-	<wavetrack name="2" channel="2" linked="0" mute="1" solo="0" height="150" minimized="0" isSelected="1" rate="44100" gain="1.0" pan="0.0" colorindex="0">
+	<wavetrack name="2" channel="2" linked="0" mute="1" solo="0" height="150" minimized="0" isSelected="0" rate="44100" gain="1.0" pan="0.0" colorindex="0">
 		<waveclip offset="0.00000000" colorindex="0">
 			<sequence maxsamples="262144" sampleformat="262159" numsamples="36316">
 				<waveblock start="0">
@@ -370,9 +370,9 @@
 	</wavetrack>
 	<wavetrack name="i_out_of_bounds" channel="2" linked="0" mute="1" solo="0" height="150" minimized="0" isSelected="0" rate="44100" gain="1.0" pan="0.0" colorindex="0">
 		<waveclip offset="0.00000000" colorindex="0">
-			<sequence maxsamples="262144" sampleformat="262159" numsamples="130516">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="143056">
 				<waveblock start="0">
-					<simpleblockfile filename="e08080ea.au" len="130516" min="-0.265778" max="0.198761" rms="0.031733"/>
+					<simpleblockfile filename="e0808e96.au" len="143056" min="-0.265778" max="0.198761" rms="0.030311"/>
 				</waveblock>
 			</sequence>
 			<envelope numpoints="0"/>
@@ -428,7 +428,7 @@
 			<envelope numpoints="0"/>
 		</waveclip>
 	</wavetrack>
-	<wavetrack name="q_direction" channel="2" linked="0" mute="0" solo="1" height="150" minimized="0" isSelected="0" rate="44100" gain="1.0" pan="0.0" colorindex="0">
+	<wavetrack name="q_direction" channel="2" linked="0" mute="1" solo="0" height="150" minimized="0" isSelected="0" rate="44100" gain="1.0" pan="0.0" colorindex="0">
 		<waveclip offset="0.00000000" colorindex="0">
 			<sequence maxsamples="262144" sampleformat="262159" numsamples="46749">
 				<waveblock start="0">
@@ -453,6 +453,16 @@
 			<sequence maxsamples="262144" sampleformat="262159" numsamples="66311">
 				<waveblock start="0">
 					<simpleblockfile filename="e080857f.au" len="66311" min="-0.272583" max="0.225861" rms="0.035356"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+	<wavetrack name="i_invalid" channel="2" linked="0" mute="1" solo="0" height="150" minimized="0" isSelected="0" rate="44100" gain="1.0" pan="0.0" colorindex="0">
+		<waveclip offset="0.00000000" colorindex="0">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="64104">
+				<waveblock start="0">
+					<simpleblockfile filename="e08087ea.au" len="64104" min="-0.608215" max="0.488007" rms="0.052383"/>
 				</waveblock>
 			</sequence>
 			<envelope numpoints="0"/>

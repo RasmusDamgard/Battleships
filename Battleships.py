@@ -343,7 +343,7 @@ def SetDirection(selectedB, isPlayer, x, y):
             PlayAudio("i_right")
         else:
             print("Input not valid")
-            #TODO: Invalid input
+            PlayAudio("i_invalid")
             continue
 
         #Reset if minimum size of ship doesnt fit.
@@ -382,7 +382,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             size = int(size)
         except ValueError:
             print("Input not valid")
-            #TODO: "invalid"
+            PlayAudio("i_invalid")
             continue
         #Does a ship of specified size exist (is it below 5 in size)
         try:
@@ -428,11 +428,13 @@ def CheckCoords(coordinates, isPlayer):
         if(isPlayer):
             print("Not valid: Too many characters in input")
             #TODO: "Too many characters"
+            PlayAudio("i_invalid")
         return False
     if len(coordinates) < 2:
         if(isPlayer):
             print("Not Valid: Too few characters in input")
             #TODO: "Too few characters"
+            PlayAudio("i_invalid")
         return False
     temp = list(coordinates)
     x = temp[0].lower()
@@ -440,19 +442,22 @@ def CheckCoords(coordinates, isPlayer):
     if x not in alphabet and x not in numbers:
         if(isPlayer):
             print("Not Valid: invalid characters")
-            #TODO: "Invalid Input"
+            PlayAudio("i_invalid")
         return False
     if y not in alphabet and y not in numbers:
         if(isPlayer):
             print("Not Valid: invalid characters")
+            PlayAudio("i_invalid")
         return False
     if x in alphabet and y in alphabet:
         if(isPlayer):
             print("Not Valid: invalid characters")
+            PlayAudio("i_invalid")
         return False
     if x in numbers and y in numbers:
         if(isPlayer):
             print("Not Valid: invalid characters")
+            PlayAudio("i_invalid")
         return False
 
     return True
