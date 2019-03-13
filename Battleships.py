@@ -102,9 +102,9 @@ class Board:
                 isGameOver = False
         return isGameOver
 
-def GameLoop(sizeX = 9, sizeY = 9, array = [0, 1, 0, 0, 1], array1 = [0, 1, 0, 0, 1]):
-    playerBoard = Board(sizeX, sizeY, array)
-    computerBoard = Board(sizeX, sizeY, array1)
+def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_computer = [0, 1, 0, 0, 1]):
+    playerBoard = Board(sizeX, sizeY, array_player)
+    computerBoard = Board(sizeX, sizeY, array_computer)
     playerBoard.draw_hidden()
     ShipSetup(playerBoard, True)
     ShipSetup(computerBoard, False)
