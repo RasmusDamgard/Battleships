@@ -103,9 +103,10 @@ class Board:
         return isGameOver
 
 def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_computer = [0, 1, 0, 0, 1]):
+    PlayAudio(i_)
     playerBoard = Board(sizeX, sizeY, array_player)
     computerBoard = Board(sizeX, sizeY, array_computer)
-    playerBoard.draw_hidden()
+    #playerBoard.draw_hidden()
     ShipSetup(playerBoard, True)
     ShipSetup(computerBoard, False)
 
@@ -143,6 +144,12 @@ def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_compute
 
 def ShipSetup(selectedB, isPlayer):
     for ships in range(selectedB.shipNum):
+        if (isPlayer):
+            for i in range(len(selectedB.shipArray)):
+                if (selectedB.shipArray[i] == 0):
+                    continue
+                PlayAudio("i_size")
+                PlayAudio(str(i+1))
         x = 0
         y = 0
         minSize = 1
@@ -401,6 +408,8 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             print("Not Valid: Choose a smaller size")
             PlayAudio("i_choose_smaller")
             continue
+        PlayAudio("i_selected")
+        PlayAudio(str(size))
         break
 
     while(isPlayer == False):
