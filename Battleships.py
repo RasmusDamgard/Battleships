@@ -106,7 +106,7 @@ def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_compute
     PlayAudio("q_tutorial")
     tutPlay = input("Do u want to hear a tutorial on how to play?")
     if (tutPlay == "y"):
-        PlayAudio("tutorial")
+        PlayAudio("i_tutorial")
     playerBoard = Board(sizeX, sizeY, array_player)
     computerBoard = Board(sizeX, sizeY, array_computer)
     #playerBoard.draw_hidden()
