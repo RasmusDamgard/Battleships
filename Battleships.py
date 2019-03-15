@@ -103,7 +103,10 @@ class Board:
         return isGameOver
 
 def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_computer = [0, 1, 0, 0, 1]):
-    PlayAudio(i_)
+    PlayAudio("q_tutorial")
+    tutPlay = input("Do u want to hear a tutorial on how to play?")
+    if (tutPlay == "y"):
+        PlayAudio("tutorial")
     playerBoard = Board(sizeX, sizeY, array_player)
     computerBoard = Board(sizeX, sizeY, array_computer)
     #playerBoard.draw_hidden()
@@ -134,11 +137,14 @@ def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_compute
         #Check if game is over and determine winner.
         if(computerBoard.check_game_over() == True):
             if(playerBoard.check_game_over() == True):
+                PlayAudio("i_tie")
                 print("Game Over: It's a tie!")
             else:
+                PlayAudio("i_win")
                 print("Game Over: You won!")
             break
         elif(playerBoard.check_game_over() == True):
+            PlayAudio("i_loss")
             print("Game Over: You lost!")
             break
 
@@ -148,7 +154,7 @@ def ShipSetup(selectedB, isPlayer):
             for i in range(len(selectedB.shipArray)):
                 if (selectedB.shipArray[i] == 0):
                     continue
-                PlayAudio("i_size")
+                PlayAudio("i_size_ava")
                 PlayAudio(str(i+1))
         x = 0
         y = 0
