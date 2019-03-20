@@ -90,9 +90,11 @@ class Board:
                         self.visible[r][c] = 3
             if(isPlayer):
                 print("You have destroyed a ship")
+                PlayAudio("sfx_destroyed")
                 PlayAudio("i_destroyed_ship")
             elif(isPlayer == False):
-                print("Enemy has destroyed one of your ships")
+                #print("Enemy has destroyed one of your ships")
+                PlayAudio("sfx_destroyed")
                 PlayAudio("i_enemy_destroyed")
 
     def check_game_over(self):
@@ -214,23 +216,26 @@ def TakeTurn(selectedB, isPlayer):
             continue
 
         #We know that firing coordinates are valid
-        print("You fired at: ", x, "; ", y)
+        #print("You fired at: ", x, "; ", y)
         PlayAudio("i_selected")
         PlayAudio(alphabet[x])
         PlayAudio(numbers[y])
+        PlayAudio("sfx_fire")
 
         #Checks what was hit.
         if(selectedB.hidden[x][y] == 0): #Hit water.
             #Update information in array.
             selectedB.visible[x][y] = 1
-            print("You missed!")
+            #print("You missed!")
+            PlayAudio("sfx_miss")
             PlayAudio("i_miss")
         else: #Hit ship.
             #Update both arrays
             selectedB.visible[x][y] = 2
             typeHit = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
-            print("You hit!")
+            #print("You hit!")
+            PlayAudio("sfx_hit")
             PlayAudio("i_hit")
             #Check if a ship was destroyed
             selectedB.check_destroyed(typeHit, True)
@@ -257,19 +262,22 @@ def TakeTurn(selectedB, isPlayer):
         PlayAudio("i_enemy_fire")
         PlayAudio(alphabet[x])
         PlayAudio(numbers[y])
+        PlayAudio("sfx_fire")
 
         #Checks what was hit.
         if(selectedB.hidden[x][y] == 0): #Hit water.
             #Update information in array.
             selectedB.visible[x][y] = 1
-            print("Enemy missed your ships!")
+            #print("Enemy missed your ships!")
+            PlayAudio("sfx_miss")
             PlayAudio("i_enemy_miss")
         else: #Hit ship.
             #Update both arrays
             selectedB.visible[x][y] = 2
             typeHit = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
-            print("Enemy hit your ships!")
+            #print("Enemy hit your ships!")
+            PlayAudio("sfx_hit")
             PlayAudio("i_enemy_hit")
             #Check if a ship was destroyed
             selectedB.check_destroyed(typeHit, False)
