@@ -56,12 +56,14 @@ class Board:
         lastY = y + dirY * (size - 1)
         if(0 > lastX or lastX > self.columns -1):
             if(isPlayer): #Player does
+                PlayAudio("sfx_error")
                 print("Your ship: Out of bounds")
                 PlayAudio("i_out_of_bounds")
                 #If it isnt the player, theres no need to output feedback.
             return False
         if(0 > lastY or lastY > self.rows -1):
             if(isPlayer): #Player does
+                PlayAudio("sfx_error")
                 print("Your ship: Out of bounds")
                 PlayAudio("i_out_of_bounds")
                 #If it isnt the player, theres no need to output feedback.
@@ -70,6 +72,7 @@ class Board:
             #If there is anything but water on any square, its not valid.
             if(self.hidden[x + dirX * i][y + dirY * i] != 0):
                 if(isPlayer): #Player does
+                    PlayAudio("sfx_error")
                     print("Your ship: Spot is occupied")
                     PlayAudio("i_occupied")
                     #If it isnt the player, theres no need to output feedback.
@@ -105,7 +108,7 @@ class Board:
         return isGameOver
 
 def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_computer = [0, 1, 0, 0, 1]):
-    PlayAudio("q_tutorial")
+    PlayAudio("q_tutorial", False)
     tutPlay = input("Do u want to hear a tutorial on how to play?")
     if (tutPlay == "y"):
         PlayAudio("i_tutorial")
@@ -119,16 +122,16 @@ def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_compute
         print("NEW TURN")
         print("")
         print("Computer_hidden")
-        computerBoard.draw_hidden()
+        #computerBoard.draw_hidden()
         print("")
         print("Player_visible")
-        playerBoard.draw_visible()
+        #playerBoard.draw_visible()
         print("")
         print("Player_hidden")
-        playerBoard.draw_hidden()
+        #playerBoard.draw_hidden()
         print("")
         print("Computer_visible")
-        computerBoard.draw_visible()
+        #computerBoard.draw_visible()
         print("")
 
         #Playerturn
@@ -209,7 +212,8 @@ def TakeTurn(selectedB, isPlayer):
         x,y = ConvertCoords(coordinates)
 
         if(selectedB.visible[x][y] > 0):
-            print("Not valid: You have already fired, at")
+            PlayAudio("sfx_error")
+            #print("Not valid: You have already fired, at")
             PlayAudio("i_already_fired")
             PlayAudio(alphabet[x])
             PlayAudio(numbers[y])
@@ -217,6 +221,7 @@ def TakeTurn(selectedB, isPlayer):
 
         #We know that firing coordinates are valid
         #print("You fired at: ", x, "; ", y)
+        PlayAudio("sfx_accept")
         PlayAudio("i_selected")
         PlayAudio(alphabet[x])
         PlayAudio(numbers[y])
@@ -292,17 +297,14 @@ def SetCoords(selectedB, isPlayer):
         PlayAudio("q_coordinates", False)
         coordinates = input("Where do you want your ship?")
 
-        #Reset if input doesnt have 2 characters
         if(CheckCoords(coordinates, isPlayer) == False):
             continue
 
         x, y = ConvertCoords(coordinates)
-        PlayAudio("i_selected")
-        PlayAudio(alphabet[x])
-        PlayAudio(numbers[y])
 
         #Check if coordinate is empty
         if(selectedB.hidden[x][y] != 0):
+            PlayAudio("sfx_error")
             print("Not Valid: You already have a ship here.")
             PlayAudio("i_occupied")
             continue
@@ -311,16 +313,21 @@ def SetCoords(selectedB, isPlayer):
             if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize, False) == False):
                 if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, False) == False):
                     if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, False) == False):
+                        PlayAudio("sfx_error")
                         print("Not Valid: Not enouogh space for a ship.")
                         PlayAudio("i_no_space")
                         continue
+        PlayAudio("sfx_accept")
+        PlayAudio("i_selected")
+        PlayAudio(alphabet[x])
+        PlayAudio(numbers[y])
         break
 
     while(isPlayer == False):
         x = random.choice(alphabet)
         y = random.choice(numbers)
         coordinates = x + y
-        #Reset if input doesnt have 2 characters
+
         if(CheckCoords(coordinates, False) == False):
             continue
 
@@ -345,24 +352,21 @@ def SetDirection(selectedB, isPlayer, x, y):
         if(direction.lower() in ["up", "u"]):
             dirX = 0
             dirY = -1
-            PlayAudio("i_selected")
-            PlayAudio("i_up")
+            direction = "up"
         elif(direction.lower() in ["down", "d"]):
             dirX = 0
             dirY = 1
-            PlayAudio("i_selected")
-            PlayAudio("i_down")
+            direction = "down"
         elif(direction.lower() in ["left", "l"]):
             dirX = -1
             dirY = 0
-            PlayAudio("i_selected")
-            PlayAudio("i_left")
+            direction = "left"
         elif(direction.lower() in ["right", "r"]):
             dirX = 1
             dirY = 0
-            PlayAudio("i_selected")
-            PlayAudio("i_right")
+            direction = "right"
         else:
+            PlayAudio("sfx_error")
             print("Input not valid")
             PlayAudio("i_invalid")
             continue
@@ -371,6 +375,10 @@ def SetDirection(selectedB, isPlayer, x, y):
         if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, True) == False):
             #Sound feedback comes from check_ship
             continue
+        
+        PlayAudio("sfx_accept")
+        PlayAudio("i_selected")
+        PlayAudio("i_"+direction)
         break
 
     while(isPlayer == False):
@@ -402,6 +410,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
         try:
             size = int(size)
         except ValueError:
+            PlayAudio("sfx_error")
             print("Input not valid")
             PlayAudio("i_invalid")
             continue
@@ -409,11 +418,13 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
         try:
             selectedB.shipArray[size - 1]
         except IndexError:
+            PlayAudio("sfx_error")
             print("Not valid: Ship of this size does not exist")
             PlayAudio("i_no_exist_ship")
             #PlayAudio("")
             continue
         if(selectedB.shipArray[size - 1] == 0):
+            PlayAudio("sfx_error")
             print("Not valid: No ships of this size")
             PlayAudio("i_no_ships_size")
             PlayAudio(str(size))
@@ -422,6 +433,7 @@ def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
             print("Not Valid: Choose a smaller size")
             PlayAudio("i_choose_smaller")
             continue
+        PlayAudio("sfx_accept")
         PlayAudio("i_selected")
         PlayAudio(str(size))
         break
@@ -449,12 +461,14 @@ def CheckCoords(coordinates, isPlayer):
     #Reset if input doesnt have 2 characters
     if len(coordinates) > 2:
         if(isPlayer):
+            PlayAudio("sfx_error")
             print("Not valid: Too many characters in input")
             #TODO: "Too many characters"
             PlayAudio("i_invalid")
         return False
     if len(coordinates) < 2:
         if(isPlayer):
+            PlayAudio("sfx_error")
             print("Not Valid: Too few characters in input")
             #TODO: "Too few characters"
             PlayAudio("i_invalid")
@@ -464,21 +478,25 @@ def CheckCoords(coordinates, isPlayer):
     y = temp[1].lower()
     if x not in alphabet and x not in numbers:
         if(isPlayer):
+            PlayAudio("sfx_error")
             print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
     if y not in alphabet and y not in numbers:
         if(isPlayer):
+            PlayAudio("sfx_error")
             print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
     if x in alphabet and y in alphabet:
         if(isPlayer):
+            PlayAudio("sfx_error")
             print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
     if x in numbers and y in numbers:
         if(isPlayer):
+            PlayAudio("sfx_error")
             print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
