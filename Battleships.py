@@ -22,23 +22,31 @@ numbers = ["1","2","3","4","5","6","7","8","9"]
 ### Classes & Functions
 ###
 
+#The class that controls a players board
 class Board:
+    #Constructor function that calculates and stores variables on instantiation
     def __init__(self, columns, rows, shipArray):
-        # Create two identical two-dimensional array.
+        #Create two identical empty two-dimensional array.
+        #These will be refered to as "the grid"
         self.visible = [[0 for rows in range(rows)] for cols in range(columns)]
         self.hidden = [[0 for rows in range(rows)] for cols in range(columns)]
-        # Safe column and row information in this instance.
+        #Store column and row information in this instance.
         self.columns = columns
         self.rows = rows
+        #Store the array of ships aswell as a counter of ships.
         self.shipArray = shipArray
         self.shipNum = sum(self.shipArray)
+        #Store the number of total ships (constant), used for gameover condition
         self.shipNumMax = self.shipNum
+        #Calculate the smallest ship in shipArray
         self.minSize = 1
         for i in range(len(shipArray)):
             if(shipArray[i] != 0):
                 minSize = i + 1
                 break
 
+    #These two functions draw the grid (two-dimensional array)
+    #Only used for developing
     def draw_visible(self):
         for r in range(self.rows):
             for c in range(self.columns):
@@ -51,62 +59,82 @@ class Board:
                 print(self.hidden[c][r], end=" ")
             print(" ")
 
+    #Checks if a ship could be placed with given parameters
+    #Returns True if a ship can be placed, False if it cant.
+    #Parameter datatypes: (self, int, int, int, int, int, boolean)
     def check_ship(self, x, y, dirX, dirY, size, isPlayer):
+        #Starts at one end of a ship and calculates where the other end is
         lastX = x + dirX * (size - 1)
         lastY = y + dirY * (size - 1)
+        #Checks if the end of the ship is larger or smaller than
         if(0 > lastX or lastX > self.columns -1):
-            if(isPlayer): #Player does
+            #If a player does this, output audio feedback
+            if(isPlayer):
                 PlayAudio("sfx_error")
-                print("Your ship: Out of bounds")
                 PlayAudio("i_out_of_bounds")
-                #If it isnt the player, theres no need to output feedback.
+            #If it isnt the player, we shouldnt output audio feedback
+            #No matter if it is computer or player we want to return false
             return False
+
+        #Exact same procedure for y-coordinate
         if(0 > lastY or lastY > self.rows -1):
-            if(isPlayer): #Player does
+            if(isPlayer):
                 PlayAudio("sfx_error")
-                print("Your ship: Out of bounds")
                 PlayAudio("i_out_of_bounds")
-                #If it isnt the player, theres no need to output feedback.
             return False
+
+        #Iterates through all the squares that the ship goes through
         for i in range(size):
-            #If there is anything but water on any square, its not valid.
+            #If there is anything BUT water on any square, its not valid.
             if(self.hidden[x + dirX * i][y + dirY * i] != 0):
-                if(isPlayer): #Player does
+                if(isPlayer):
                     PlayAudio("sfx_error")
-                    print("Your ship: Spot is occupied")
                     PlayAudio("i_occupied")
-                    #If it isnt the player, theres no need to output feedback.
                 return False
         return True
 
+    #Adds a ship to the grid based on given parameters
+    #This function should only be called after check_ship() to avoid errors
+    #Parameter datatypes: (self, int, int, int, int, int)
     def add_ship(self, x, y, dirX, dirY, size):
+        #Iterate through all the squares that the ship goes through
         for i in range(size):
+            #Change information in the array to reflect the ship ID
+            #Ship ID is equal to shipNum at this moment in time
             self.hidden[x + i * dirX][y + i * dirY] = self.shipNum
+        #Reduce shipNum and thus the ship ID for the next ship
         self.shipNum -= 1
+        #Remove the used ship from shipArray
         self.shipArray[size - 1] -= 1
 
-    def check_destroyed(self, typeHit, isPlayer):
-        if(any(typeHit in sublist for sublist in self.hidden) == False):
-            for c in range(self.columns):
-                for r in range(self.rows):
-                    if(self.hidden[r][c] == typeHit + 10):
-                        self.visible[r][c] = 3
+    #Checks if all squares of a ship has been hit, rendering the ship destroyed
+    #Doesnt return anything, handles what needs to be handled immediately
+    #Paramter dataypes: (self, int, boolean)
+    def check_destroyed(self, shipID, isPlayer):
+        #Checks if there exists a ship with the given shipID anywhere in grid
+        #If not, its because the ship has been destroyed
+        if(any(shipID in sublist for sublist in self.hidden) == False):
+            #Give sound feedback depending on whose board got hit
             if(isPlayer):
-                print("You have destroyed a ship")
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_destroyed_ship")
-            elif(isPlayer == False):
-                #print("Enemy has destroyed one of your ships")
+            else:
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_enemy_destroyed")
 
+    #Checks if all ships have been removed from the grid
+    #Returns True if game is over, False if game is still going on.
     def check_game_over(self):
-        isGameOver = True
+        #For each ship ID
         for i in range (1, self.shipNumMax + 1):
+            #Iterate through the grid and return False if anything is found
             if(any(i in sublist for sublist in self.hidden) == True):
-                isGameOver = False
-        return isGameOver
+                return False
+        #If nothing was found, return True
+        return True
 
+#Main function that calls all other functions
+#TODO: MORE COMMENTING    ->
 def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_computer = [0, 1, 0, 0, 1]):
     PlayAudio("q_tutorial", False)
     tutPlay = input("Do u want to hear a tutorial on how to play?")
@@ -139,7 +167,7 @@ def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_compute
         #Computerturn
         TakeTurn(playerBoard, False)
 
-        #Check if game is over and determine winner.
+        #Check if game is over and determine winner. Then break out of GameLoop()
         if(computerBoard.check_game_over() == True):
             if(playerBoard.check_game_over() == True):
                 PlayAudio("i_tie")
@@ -161,8 +189,7 @@ def ShipSetup(selectedB, isPlayer):
                     continue
                 PlayAudio("i_size_ava")
                 PlayAudio(str(i+1))
-        x = 0
-        y = 0
+
         minSize = 1
         for i in range(len(selectedB.shipArray)):
             if(selectedB.shipArray[i] != 0):
@@ -175,10 +202,11 @@ def ShipSetup(selectedB, isPlayer):
         #INPUT: Size
         size = SetSize(selectedB, isPlayer, x, y, dirX, dirY)
         print("")
+
         selectedB.add_ship(x, y, dirX, dirY, size)
         selectedB.draw_hidden()
         if(isPlayer):
-            print("Deployed a ship, at: ", x, y, dirX, dirY, size)
+            #print("Deployed a ship, at: ", x, y, dirX, dirY, size)
             PlayAudio("i_deploy")
             PlayAudio(alphabet[x])
             PlayAudio(numbers[y])
@@ -194,7 +222,7 @@ def ShipSetup(selectedB, isPlayer):
             PlayAudio("i_size")
             PlayAudio(str(size))
     if(isPlayer):
-        print("Deployed ships")
+        #print("Deployed ships")
         PlayAudio("i_all_ships_deploy")
 
 def TakeTurn(selectedB, isPlayer):
@@ -237,13 +265,13 @@ def TakeTurn(selectedB, isPlayer):
         else: #Hit ship.
             #Update both arrays
             selectedB.visible[x][y] = 2
-            typeHit = selectedB.hidden[x][y]
+            shipID = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
             #print("You hit!")
             PlayAudio("sfx_hit")
             PlayAudio("i_hit")
             #Check if a ship was destroyed
-            selectedB.check_destroyed(typeHit, True)
+            selectedB.check_destroyed(shipID, True)
         #Break out of loop
         break
 
@@ -279,13 +307,13 @@ def TakeTurn(selectedB, isPlayer):
         else: #Hit ship.
             #Update both arrays
             selectedB.visible[x][y] = 2
-            typeHit = selectedB.hidden[x][y]
+            shipID = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
             #print("Enemy hit your ships!")
             PlayAudio("sfx_hit")
             PlayAudio("i_enemy_hit")
             #Check if a ship was destroyed
-            selectedB.check_destroyed(typeHit, False)
+            selectedB.check_destroyed(shipID, False)
         #Break out of loop
         break
 
@@ -375,7 +403,7 @@ def SetDirection(selectedB, isPlayer, x, y):
         if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, True) == False):
             #Sound feedback comes from check_ship
             continue
-        
+
         PlayAudio("sfx_accept")
         PlayAudio("i_selected")
         PlayAudio("i_"+direction)
@@ -532,8 +560,8 @@ def PlayAudio(fileName, sleep = True):
         time.sleep(duration)
 
 
-#Start the game
+#Start the game by calling GameLoop() once
 GameLoop()
 
-#Prevent game from closing instantly.
+#Prevent game from closing instantly after GameLoop() is over
 input("Exit Game?")
