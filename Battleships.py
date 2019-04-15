@@ -44,6 +44,8 @@ class Board:
             if(shipArray[i] != 0):
                 minSize = i + 1
                 break
+        #Variable for AI, saves coordinate of last hit ship
+        self.lastHit = []
 
     #These two functions draw the grid (two-dimensional array)
     #Only used for developing
@@ -114,6 +116,11 @@ class Board:
         #Checks if there exists a ship with the given shipID anywhere in grid
         #If not, its because the ship has been destroyed
         if(any(shipID in sublist for sublist in self.hidden) == False):
+            #For AI purposes, change grid to reflect the ship is destroyed
+            for c in range(self.columns):
+                for r in range(self.rows):
+                    if(self.hidden[r][c] == shipID + 10):
+                        self.visible[r][c] = 3
             #Give sound feedback depending on whose board got hit
             if(isPlayer):
                 PlayAudio("sfx_destroyed")
@@ -121,6 +128,8 @@ class Board:
             else:
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_enemy_destroyed")
+                #Clear AI
+                self.lastHit.clear()
 
     #Checks if all ships have been removed from the grid
     #Returns True if game is over, False if game is still going on.
@@ -135,32 +144,31 @@ class Board:
 
 #Main function that calls all other functions
 #TODO: MORE COMMENTING    ->
-def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 1, 0, 0, 1], array_computer = [0, 1, 0, 0, 1]):
+def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 0, 0, 0, 4], array_computer = [0, 1, 0, 0, 1]):
     PlayAudio("q_tutorial", False)
     tutPlay = input("Do u want to hear a tutorial on how to play?")
     if (tutPlay == "y"):
         PlayAudio("i_tutorial")
     playerBoard = Board(sizeX, sizeY, array_player)
     computerBoard = Board(sizeX, sizeY, array_computer)
-    #playerBoard.draw_hidden()
     ShipSetup(playerBoard, True)
     ShipSetup(computerBoard, False)
 
     while(True):
+        print("")
         print("NEW TURN")
-        #print("")
+        print("")
         #print("Computer_hidden")
         #computerBoard.draw_hidden()
         #print("")
-        #print("Player_visible")
-        #playerBoard.draw_visible()
-        #print("")
+        print("Player_visible")
+        playerBoard.draw_visible()
+        print("")
         #print("Player_hidden")
         #playerBoard.draw_hidden()
         #print("")
         #print("Computer_visible")
         #computerBoard.draw_visible()
-        print("")
 
         #Playerturn
         TakeTurn(computerBoard, True)
@@ -206,7 +214,6 @@ def ShipSetup(selectedB, isPlayer):
         selectedB.add_ship(x, y, dirX, dirY, size)
         selectedB.draw_hidden()
         if(isPlayer):
-            #print("Deployed a ship, at: ", x, y, dirX, dirY, size)
             PlayAudio("i_deploy")
             PlayAudio(alphabet[x])
             PlayAudio(numbers[y])
@@ -222,12 +229,12 @@ def ShipSetup(selectedB, isPlayer):
             PlayAudio("i_size")
             PlayAudio(str(size))
     if(isPlayer):
-        #print("Deployed ships")
         PlayAudio("i_all_ships_deploy")
 
 def TakeTurn(selectedB, isPlayer):
     x = 0
     y = 0
+    limiter = 0
     while(isPlayer):
         #Voicefeedback: Prompt fire coords
         PlayAudio("q_fire")
@@ -276,16 +283,57 @@ def TakeTurn(selectedB, isPlayer):
         break
 
     while(isPlayer == False):
-        x = random.choice(alphabet)
-        y = random.choice(numbers)
-        coordinates = x + y
-
-        #Check if input is valid
-        if(CheckCoords(coordinates, False) == False):
-            continue
-
-        x,y = ConvertCoords(coordinates)
-
+        limiter += 1
+        #If computer hit something last turn, initiate AI algorhytm
+        if(selectedB.lastHit != [] and limiter < 25):
+            print("This hap 1")
+            print(limiter)
+            print(selectedB.lastHit)
+            #Create shorthand variable
+            r = selectedB.lastHit
+            #If we hit multiple times, we can determine direction
+            if(len(r)>2):
+                print("tjos hap 2")
+                #If x is same for both hits, ship must be differing on y
+                if(r[0]==r[2]):
+                    #x should be the same value
+                    x = r[0]
+                    #but y should be either one below or one above lasthits
+                    t = r[1]-r[3]
+                    y = int(r[1] + t - t*random.randint(0,1)*(len(r)/2 + 1))
+                #Same method, but reverse
+                if(r[1]==r[3]):
+                    t = r[0]-r[2]
+                    x = int(r[0] + t - t*random.randint(0,1)*(len(r)/2 + 1))
+                    y = r[1]
+            #We hit once, ship must be in one of the 4 adjacent squares
+            else:
+                print("this 3")
+                #Same coordinates as lasthit, but add or remove one at random
+                temp = random.randint(0,3)
+                x = r[0]
+                y = r[1]
+                if(temp == 0):
+                    x += 1
+                if(temp == 1):
+                    x -= 1
+                if(temp == 2):
+                    y += 1
+                if(temp == 3):
+                    y -= 1
+            if(x<0 or y<0):
+                continue
+        else: #If nothing was hit last turn, select completely random
+            selectedB.lastHit.clear()
+            print("This 4 works")
+            x = random.choice(alphabet)
+            y = random.choice(numbers)
+            coordinates = x + y
+            if(CheckCoords(coordinates, False) == False):
+                print("oops")
+                continue
+            x,y = ConvertCoords(coordinates)
+        print("x:",x,";y:",y)
         if(selectedB.visible[x][y] > 0):
             #Already fired here
             continue
@@ -301,7 +349,6 @@ def TakeTurn(selectedB, isPlayer):
         if(selectedB.hidden[x][y] == 0): #Hit water.
             #Update information in array.
             selectedB.visible[x][y] = 1
-            #print("Enemy missed your ships!")
             PlayAudio("sfx_miss")
             PlayAudio("i_enemy_miss")
         else: #Hit ship.
@@ -309,11 +356,13 @@ def TakeTurn(selectedB, isPlayer):
             selectedB.visible[x][y] = 2
             shipID = selectedB.hidden[x][y]
             selectedB.hidden[x][y] += 10
-            #print("Enemy hit your ships!")
             PlayAudio("sfx_hit")
             PlayAudio("i_enemy_hit")
             #Check if a ship was destroyed
+            selectedB.lastHit.append(x)
+            selectedB.lastHit.append(y)
             selectedB.check_destroyed(shipID, False)
+            print("They hit us")
         #Break out of loop
         break
 
@@ -551,13 +600,13 @@ def ConvertCoords(coordinates):
 def PlayAudio(fileName, sleep = True):
     path = "audio/" + fileName + ".wav"
     mixer.music.load(path)
-    mixer.music.play()
+    #mixer.music.play()
     if(sleep):
         wr = wave.open(path, "r")
         frames = wr.getnframes()
         frameRate = wr.getframerate()
         duration = frames / frameRate
-        time.sleep(duration)
+        #time.sleep(duration)
 
 
 #Start the game by calling GameLoop() once
