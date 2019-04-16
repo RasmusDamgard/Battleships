@@ -12,226 +12,430 @@ from pygame import mixer
 import random
 import wave
 import time
+import copy
 mixer.init()
 
-#Global constants
+#Global constants. Read-only or deepcopied for use.
 alphabet = ["a","b","c","d","e","f","g","h","i"]
 numbers = ["1","2","3","4","5","6","7","8","9"]
+shipArray = [0, 0, 0, 0, 1]
+gridX = 9
+gridY = 9
+
+#Parameter object that stores all needed information about a ships placement
+class Ship:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.dirX = 0
+        self.dirY = 0
+        self.size = 0
 
 ###
-### Classes & Functions
+### Start of Board class
 ###
 
-#The class that controls a players board
+#The class that controls a board. Two of these are instantiated.
 class Board:
     #Constructor function that calculates and stores variables on instantiation
-    def __init__(self, columns, rows, shipArray):
+    def __init__(self, isPlayer):
         #Create two identical empty two-dimensional array.
         #These will be refered to as "the grid"
-        self.visible = [[0 for rows in range(rows)] for cols in range(columns)]
-        self.hidden = [[0 for rows in range(rows)] for cols in range(columns)]
-        #Store column and row information in this instance.
-        self.columns = columns
-        self.rows = rows
+        self.visible = [[0 for rows in range(gridY)] for cols in range(gridX)]
+        self.hidden = [[0 for rows in range(gridY)] for cols in range(gridX)]
         #Store the array of ships aswell as a counter of ships.
-        self.shipArray = shipArray
+        self.shipArray = copy.deepcopy(shipArray)
         self.shipNum = sum(self.shipArray)
         #Store the number of total ships (constant), used for gameover condition
         self.shipNumMax = self.shipNum
-        #Calculate the smallest ship in shipArray
+        #The smallest ship in shipArray, is calculated when needed
         self.minSize = 1
-        for i in range(len(shipArray)):
-            if(shipArray[i] != 0):
-                minSize = i + 1
-                break
         #Variable for AI, saves coordinate of last hit ship
         self.lastHit = []
+        #Boolean for determining if board belongs to player or computer
+        self.isPlayer = isPlayer
+        self.shipParams = Ship()
 
-    #These two functions draw the grid (two-dimensional array)
-    #Only used for developing
+    #These two functions draw the grid. Only used for developing/debugging.
     def draw_visible(self):
-        for r in range(self.rows):
-            for c in range(self.columns):
+        for r in range(gridY):
+            for c in range(gridX):
                 print(self.visible[c][r], end=" ")
             print(" ")
 
     def draw_hidden(self):
-        for r in range(self.rows):
-            for c in range(self.columns):
+        for r in range(gridY):
+            for c in range(gridX):
                 print(self.hidden[c][r], end=" ")
             print(" ")
 
     #Checks if a ship could be placed with given parameters
     #Returns True if a ship can be placed, False if it cant.
-    #Parameter datatypes: (self, int, int, int, int, int, boolean)
-    def check_ship(self, x, y, dirX, dirY, size, isPlayer):
-        #Starts at one end of a ship and calculates where the other end is
-        lastX = x + dirX * (size - 1)
-        lastY = y + dirY * (size - 1)
-        #Checks if the end of the ship is larger or smaller than
-        if(0 > lastX or lastX > self.columns -1):
-            #If a player does this, output audio feedback
-            if(isPlayer):
+    def check_ship(self, ship: Ship, isMute: bool):
+        #Starts at one end of a ship and calculates where the far end is
+        lastX = ship.x + ship.dirX * (ship.size - 1)
+        lastY = ship.y + ship.dirY * (ship.size - 1)
+        #Checks if the end of the ship is larger or smaller than number of cols
+        if(0 > lastX or lastX > gridX -1):
+            if(isMute == False):
                 PlayAudio("sfx_error")
                 PlayAudio("i_out_of_bounds")
-            #If it isnt the player, we shouldnt output audio feedback
-            #No matter if it is computer or player we want to return false
             return False
 
-        #Exact same procedure for y-coordinate
-        if(0 > lastY or lastY > self.rows -1):
-            if(isPlayer):
+        #Exact same procedure for y-coordinate and rows
+        if(0 > lastY or lastY > gridY -1):
+            if(isMute == False):
                 PlayAudio("sfx_error")
                 PlayAudio("i_out_of_bounds")
             return False
 
         #Iterates through all the squares that the ship goes through
-        for i in range(size):
+        for i in range(ship.size):
             #If there is anything BUT water on any square, its not valid.
-            if(self.hidden[x + dirX * i][y + dirY * i] != 0):
-                if(isPlayer):
+            if(self.hidden[ship.x + ship.dirX * i][ship.y + ship.dirY * i] != 0):
+                if(isMute == False):
                     PlayAudio("sfx_error")
                     PlayAudio("i_occupied")
                 return False
         return True
 
-    #Adds a ship to the grid based on given parameters
+    #Adds a ship to the grid based on a given Ship object
     #This function should only be called after check_ship() to avoid errors
-    #Parameter datatypes: (self, int, int, int, int, int)
-    def add_ship(self, x, y, dirX, dirY, size):
+    def add_ship(self, ship: Ship):
         #Iterate through all the squares that the ship goes through
-        for i in range(size):
+        for i in range(ship.size):
+            x = i * ship.dirX + ship.x
+            y = i * ship.dirY + ship.y
             #Change information in the array to reflect the ship ID
             #Ship ID is equal to shipNum at this moment in time
-            self.hidden[x + i * dirX][y + i * dirY] = self.shipNum
+            self.hidden[x][y] = self.shipNum
         #Reduce shipNum and thus the ship ID for the next ship
         self.shipNum -= 1
         #Remove the used ship from shipArray
-        self.shipArray[size - 1] -= 1
+        self.shipArray[ship.size - 1] -= 1
 
     #Checks if all squares of a ship has been hit, rendering the ship destroyed
-    #Doesnt return anything, handles what needs to be handled immediately
-    #Paramter dataypes: (self, int, boolean)
-    def check_destroyed(self, shipID, isPlayer):
+    #Doesnt return anything, handles what needs to be handled internally
+    def check_destroyed(self, shipID: int):
         #Checks if there exists a ship with the given shipID anywhere in grid
         #If not, its because the ship has been destroyed
         if(any(shipID in sublist for sublist in self.hidden) == False):
             #For AI purposes, change grid to reflect the ship is destroyed
-            for c in range(self.columns):
-                for r in range(self.rows):
+            for c in range(gridX):
+                for r in range(gridY):
                     if(self.hidden[r][c] == shipID + 10):
                         self.visible[r][c] = 3
+
             #Give sound feedback depending on whose board got hit
-            if(isPlayer):
+            if(self.isPlayer):
                 PlayAudio("sfx_destroyed")
-                PlayAudio("i_destroyed_ship")
+                PlayAudio("i_allied_ship_destroyed")
+                #Clear AI memory
+                self.lastHit.clear()
             else:
                 PlayAudio("sfx_destroyed")
-                PlayAudio("i_enemy_destroyed")
-                #Clear AI
-                self.lastHit.clear()
+                PlayAudio("i_enemy_ship_destroyed")
+
 
     #Checks if all ships have been removed from the grid
-    #Returns True if game is over, False if game is still going on.
+    #Returns True if game is over, False if game is still going on
     def check_game_over(self):
         #For each ship ID
         for i in range (1, self.shipNumMax + 1):
-            #Iterate through the grid and return False if anything is found
+            #Iterate through the grid and return False if shipID is found
             if(any(i in sublist for sublist in self.hidden) == True):
                 return False
-        #If nothing was found, return True
+        #If nothing was found, return True (there are no ships left on grid)
         return True
 
+    #Handles the placement of ships, has no return values or parameters
+    def ship_setup(self):
+        for ships in range(self.shipNum):
+            #If its a player, inform them what ships they have left
+            if (self.isPlayer):
+                for i in range(len(self.shipArray)):
+                    if (self.shipArray[i] == 0):
+                        continue
+                    PlayAudio("i_size_ava")
+                    #PlayAudio(str(i+1))
+
+            #Calculate minSize by iterating through shipArray
+            for i in range(len(self.shipArray)):
+                if(self.shipArray[i] != 0):
+                    self.minSize = i + 1
+                    break
+
+            #Reset ship parameter object
+            self.shipParams.size = self.minSize
+            self.shipParams.x = 0
+            self.shipParams.y = 0
+            self.shipParams.dirX = 0
+            self.shipParams.dirY = 0
+
+            #Functions that determines and sets values for ship placement
+            self.set_coords() #Determines x and y
+            self.set_direction() #Determines dirX and dirY
+            self.set_size()
+
+            #Place the ship at given values.
+            self.add_ship(self.shipParams)
+
+            #Audio feedback for player
+            if(self.isPlayer):
+                PlayAudio("i_deploy")
+                PlayAudio(alphabet[self.shipParams.x])
+                PlayAudio(numbers[self.shipParams.y])
+                PlayAudio("i_going")
+                if(self.shipParams.dirX > 0):
+                    PlayAudio("i_right")
+                elif(self.shipParams.dirX < 0):
+                    PlayAudio("i_left")
+                elif(self.shipParams.dirY > 0):
+                    PlayAudio("i_down")
+                elif(self.shipParams.dirY < 0):
+                    PlayAudio("i_up")
+                PlayAudio("i_size")
+                PlayAudio(str(self.shipParams.size))
+        if(self.isPlayer):
+            PlayAudio("i_all_ships_deploy")
+
+    def set_coords(self):
+        #isPlayer boolean determines what while loop to go into
+        while(self.isPlayer): #Used as GOTO-statement with continue keyword
+            #Ask for coordinates, allow user to input before message is over
+            PlayAudio("q_coordinates", False)
+            strCoords = input("Coordinates?")
+
+            #Check if the inputted coordinates are valid
+            if(CheckCoords(strCoords, True) == False):
+                continue
+
+            #Convert the string input into x and y integers
+            x, y = ConvertCoords(strCoords)
+
+            #Check if coordinate is empty
+            if(self.hidden[x][y] != 0):
+                #Position is not valid, a ship already occupies the spot
+                PlayAudio("sfx_error")
+                PlayAudio("i_occupied")
+                continue
+
+            self.shipParams.x = x
+            self.shipParams.y = y
+            ship1 = copy.deepcopy(self.shipParams)
+            ship1.dirX = 1
+            ship2 = copy.deepcopy(self.shipParams)
+            ship2.dirX = -1
+            ship3 = copy.deepcopy(self.shipParams)
+            ship3.dirY = 1
+            ship4 = copy.deepcopy(self.shipParams)
+            ship4.dirY = -1
+
+            print(ship1,ship2,ship3,ship4)
+            #Reset if no direction is valid for this coordinate and minSize
+            if(
+            self.check_ship(ship1, True) == False and
+            self.check_ship(ship2, True) == False and
+            self.check_ship(ship3, True) == False and
+            self.check_ship(ship4, True) == False):
+            #Audio feedback should only be given if all directions are blocked
+                PlayAudio("sfx_error")
+                PlayAudio("i_no_space")
+                continue
+
+            #Inform player what coordinates they chose
+            PlayAudio("sfx_accept")
+            PlayAudio("i_selected")
+            PlayAudio(alphabet[x])
+            PlayAudio(numbers[y])
+
+            #Break out of loop and end function
+            break
+
+        #A non-player board does almost the same, but with no audio feedback
+        while(not self.isPlayer):
+            strX = random.choice(alphabet)
+            strY = random.choice(numbers)
+            coordinates = strX + strY
+
+            if(CheckCoords(coordinates, True) == False):
+                continue
+
+            x, y = ConvertCoords(coordinates)
+
+            if(self.hidden[x][y] != 0):
+                continue
+
+            self.shipParams.x = x
+            self.shipParams.y = y
+            ship1 = copy.deepcopy(self.shipParams)
+            ship1.dirX = 1
+            ship2 = copy.deepcopy(self.shipParams)
+            ship2.dirX = -1
+            ship3 = copy.deepcopy(self.shipParams)
+            ship3.dirY = 1
+            ship4 = copy.deepcopy(self.shipParams)
+            ship4.dirY = -1
+
+            if(
+            self.check_ship(ship1, True) == False and
+            self.check_ship(ship2, True) == False and
+            self.check_ship(ship3, True) == False and
+            self.check_ship(ship4, True) == False):
+                continue
+
+            break
+
+    def set_direction(self):
+        while(self.isPlayer):
+            PlayAudio("q_direction", False)
+            strDirection = input("Direction?")
+
+            #Parse input
+            if(strDirection.lower() in ["up", "u"]):
+                self.shipParams.dirY = -1
+                strDirection = "up"
+            elif(strDirection.lower() in ["down", "d"]):
+                self.shipParams.dirY = 1
+                strDirection = "down"
+            elif(strDirection.lower() in ["left", "l"]):
+                self.shipParams.dirX = -1
+                strDirection = "left"
+            elif(strDirection.lower() in ["right", "r"]):
+                self.shipParams.dirX = 1
+                strDirection = "right"
+            else:
+                #If input could not be parsed, it must be invalid
+                PlayAudio("sfx_error")
+                PlayAudio("i_invalid")
+                continue
+
+            #Reset if minimum size of ship doesnt fit.
+            if(self.check_ship(self.shipParams, False) == False):
+                #Sound feedback comes from check_ship()
+                continue
+
+            PlayAudio("sfx_accept")
+            PlayAudio("i_selected")
+            PlayAudio("i_" + strDirection)
+
+            break
+
+        while(not self.isPlayer):
+            strDirection = random.choice(["up","down","left","right"])
+
+            if(strDirection.lower() in ["up"]):
+                self.shipParams.dirY = 1
+            elif(strDirection.lower() in ["down"]):
+                self.shipParams.dirY = -1
+            elif(strDirection.lower() in ["left"]):
+                self.shipParams.dirX = -1
+            elif(strDirection.lower() in ["right"]):
+                self.shipParams.dirX = 1
+
+            if(self.check_ship(self.shipParams, True) == False):
+                continue
+
+            break
+
+    def set_size(self):
+        while(self.isPlayer):
+            PlayAudio("q_size", False)
+            strSize = input("Size of ship")
+
+            #Is input an integer? Then parse it
+            try:
+                size = int(strSize)
+            except ValueError:
+                #If not, restart while loop
+                PlayAudio("sfx_error")
+                PlayAudio("i_invalid")
+                continue
+            self.shipParams.size = int(strSize)
+
+            #Does a ship of specified size exist
+            try:
+                self.shipArray[self.shipParams.size - 1]
+            except IndexError:
+                PlayAudio("sfx_error")
+                PlayAudio("i_no_exist_ship")
+                continue
+
+            #Does player have any ships of this size left?
+            if(self.shipArray[self.shipParams.size - 1] == 0):
+                PlayAudio("sfx_error")
+                PlayAudio("i_no_ships_size")
+                PlayAudio(strSize)
+                continue
+
+            #Can a ship be placed with that size?
+            if(self.check_ship(self.shipParams, False) == False):
+                PlayAudio("i_choose_smaller")
+                continue
+
+            PlayAudio("sfx_accept")
+            PlayAudio("i_selected")
+            PlayAudio(strSize)
+
+            break
+
+        while(not self.isPlayer):
+            strSize = str(random.randint(1,len(self.shipArray)))
+            try:
+                size = int(strSize)
+            except ValueError:
+                continue
+            self.shipParams.size = int(strSize)
+            try:
+                self.shipArray[self.shipParams.size - 1]
+            except IndexError:
+                continue
+            if(self.shipArray[self.shipParams.size - 1] == 0):
+                continue
+            if(self.check_ship(self.shipParams, True) == False):
+                continue
+
+            break
+
+###
+### End of Board class
+###
+
 #Main function that calls all other functions
-#TODO: MORE COMMENTING    ->
-def GameLoop(sizeX = 9, sizeY = 9, array_player = [0, 0, 0, 0, 4], array_computer = [0, 1, 0, 0, 1]):
+def GameLoop():
+    #TODO: Make automatic
     PlayAudio("q_tutorial", False)
     tutPlay = input("Do u want to hear a tutorial on how to play?")
     if (tutPlay == "y"):
         PlayAudio("i_tutorial")
-    playerBoard = Board(sizeX, sizeY, array_player)
-    computerBoard = Board(sizeX, sizeY, array_computer)
-    ShipSetup(playerBoard, True)
-    ShipSetup(computerBoard, False)
 
+    #Functions that only need to be called once
+    playerBoard = Board(True)
+    computerBoard = Board(False)
+    playerBoard.ship_setup()
+    computerBoard.ship_setup()
+    computerBoard.draw_hidden()
+    #The loop in which the game is played, only breaks on game over.
     while(True):
-        print("")
-        print("NEW TURN")
-        print("")
-        #print("Computer_hidden")
-        #computerBoard.draw_hidden()
-        #print("")
-        print("Player_visible")
-        playerBoard.draw_visible()
-        print("")
-        #print("Player_hidden")
-        #playerBoard.draw_hidden()
-        #print("")
-        #print("Computer_visible")
-        #computerBoard.draw_visible()
+        #Players turn, they fire at the opponents board
+        FireAt(computerBoard, True)
 
-        #Playerturn
-        TakeTurn(computerBoard, True)
         #Computerturn
-        TakeTurn(playerBoard, False)
+        FireAt(playerBoard, False)
 
-        #Check if game is over and determine winner. Then break out of GameLoop()
+        #Check if game is over and determine winner. Then break out of loop.
         if(computerBoard.check_game_over() == True):
             if(playerBoard.check_game_over() == True):
                 PlayAudio("i_tie")
-                print("Game Over: It's a tie!")
             else:
                 PlayAudio("i_win")
-                print("Game Over: You won!")
             break
         elif(playerBoard.check_game_over() == True):
             PlayAudio("i_loss")
-            print("Game Over: You lost!")
             break
 
-def ShipSetup(selectedB, isPlayer):
-    for ships in range(selectedB.shipNum):
-        if (isPlayer):
-            for i in range(len(selectedB.shipArray)):
-                if (selectedB.shipArray[i] == 0):
-                    continue
-                PlayAudio("i_size_ava")
-                PlayAudio(str(i+1))
-
-        minSize = 1
-        for i in range(len(selectedB.shipArray)):
-            if(selectedB.shipArray[i] != 0):
-                selectedB.minSize = i + 1
-                break
-        #INPUT: Coordinates
-        x,y = SetCoords(selectedB, isPlayer)
-        #INPUT: Direction
-        dirX, dirY = SetDirection(selectedB, isPlayer, x, y)
-        #INPUT: Size
-        size = SetSize(selectedB, isPlayer, x, y, dirX, dirY)
-        print("")
-
-        selectedB.add_ship(x, y, dirX, dirY, size)
-        selectedB.draw_hidden()
-        if(isPlayer):
-            PlayAudio("i_deploy")
-            PlayAudio(alphabet[x])
-            PlayAudio(numbers[y])
-            PlayAudio("i_going")
-            if(dirX > 0):
-                PlayAudio("i_right")
-            elif(dirX < 0):
-                PlayAudio("i_left")
-            elif(dirY > 0):
-                PlayAudio("i_down")
-            elif(dirY < 0):
-                PlayAudio("i_up")
-            PlayAudio("i_size")
-            PlayAudio(str(size))
-    if(isPlayer):
-        PlayAudio("i_all_ships_deploy")
-
-def TakeTurn(selectedB, isPlayer):
+#TODO: More commenting
+def FireAt(selectedB, isPlayer):
     x = 0
     y = 0
     limiter = 0
@@ -278,7 +482,7 @@ def TakeTurn(selectedB, isPlayer):
             PlayAudio("sfx_hit")
             PlayAudio("i_hit")
             #Check if a ship was destroyed
-            selectedB.check_destroyed(shipID, True)
+            selectedB.check_destroyed(shipID)
         #Break out of loop
         break
 
@@ -361,208 +565,31 @@ def TakeTurn(selectedB, isPlayer):
             #Check if a ship was destroyed
             selectedB.lastHit.append(x)
             selectedB.lastHit.append(y)
-            selectedB.check_destroyed(shipID, False)
+            selectedB.check_destroyed(shipID)
             print("They hit us")
         #Break out of loop
         break
 
-def SetCoords(selectedB, isPlayer):
-    x = 0
-    y = 0
-    #INPUT: Coordinates.
-    while(isPlayer): #Used as goto with continue keyword.
-        PlayAudio("q_coordinates", False)
-        coordinates = input("Where do you want your ship?")
-
-        if(CheckCoords(coordinates, isPlayer) == False):
-            continue
-
-        x, y = ConvertCoords(coordinates)
-
-        #Check if coordinate is empty
-        if(selectedB.hidden[x][y] != 0):
-            PlayAudio("sfx_error")
-            print("Not Valid: You already have a ship here.")
-            PlayAudio("i_occupied")
-            continue
-        #Reset if no direction is valid for this coordinate
-        if(selectedB.check_ship(x, y, 1, 0, selectedB.minSize, False) == False):
-            if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize, False) == False):
-                if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, False) == False):
-                    if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, False) == False):
-                        PlayAudio("sfx_error")
-                        print("Not Valid: Not enouogh space for a ship.")
-                        PlayAudio("i_no_space")
-                        continue
-        PlayAudio("sfx_accept")
-        PlayAudio("i_selected")
-        PlayAudio(alphabet[x])
-        PlayAudio(numbers[y])
-        break
-
-    while(isPlayer == False):
-        x = random.choice(alphabet)
-        y = random.choice(numbers)
-        coordinates = x + y
-
-        if(CheckCoords(coordinates, False) == False):
-            continue
-
-        x, y = ConvertCoords(coordinates)
-
-        #Check if coordinate is empty
-        if(selectedB.hidden[x][y] != 0):
-            continue
-        #Reset if no direction is valid for this coordinate
-        if(selectedB.check_ship(x, y, 1, 0, selectedB.minSize, False) == False):
-            if(selectedB.check_ship(x, y, -1, 0, selectedB.minSize, False) == False):
-                if(selectedB.check_ship(x, y, 0, 1, selectedB.minSize, False) == False):
-                    if(selectedB.check_ship(x, y, 0, -1, selectedB.minSize, False) == False):
-                        continue
-        break
-    return x, y
-
-def SetDirection(selectedB, isPlayer, x, y):
-    while(isPlayer):
-        PlayAudio("q_direction", False)
-        direction = input("UP/DOWN/LEFT/RIGHT")
-        if(direction.lower() in ["up", "u"]):
-            dirX = 0
-            dirY = -1
-            direction = "up"
-        elif(direction.lower() in ["down", "d"]):
-            dirX = 0
-            dirY = 1
-            direction = "down"
-        elif(direction.lower() in ["left", "l"]):
-            dirX = -1
-            dirY = 0
-            direction = "left"
-        elif(direction.lower() in ["right", "r"]):
-            dirX = 1
-            dirY = 0
-            direction = "right"
-        else:
-            PlayAudio("sfx_error")
-            print("Input not valid")
-            PlayAudio("i_invalid")
-            continue
-
-        #Reset if minimum size of ship doesnt fit.
-        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, True) == False):
-            #Sound feedback comes from check_ship
-            continue
-
-        PlayAudio("sfx_accept")
-        PlayAudio("i_selected")
-        PlayAudio("i_"+direction)
-        break
-
-    while(isPlayer == False):
-        direction = random.choice(["up","down","left","right"])
-        if(direction.lower() in ["up"]):
-            dirX = 0
-            dirY = -1
-        elif(direction.lower() in ["down"]):
-            dirX = 0
-            dirY = 1
-        elif(direction.lower() in ["left"]):
-            dirX = -1
-            dirY = 0
-        elif(direction.lower() in ["right"]):
-            dirX = 1
-            dirY = 0
-
-        #Reset if minimum size of ship doesnt fit.
-        if(selectedB.check_ship(x, y, dirX, dirY, selectedB.minSize, False) == False):
-            continue
-        break
-
-    return dirX, dirY
-
-def SetSize(selectedB, isPlayer, x, y, dirX, dirY):
-    while(isPlayer):
-        PlayAudio("q_size", False)
-        size = input("Size of ship")
-        try:
-            size = int(size)
-        except ValueError:
-            PlayAudio("sfx_error")
-            print("Input not valid")
-            PlayAudio("i_invalid")
-            continue
-        #Does a ship of specified size exist (is it below 5 in size)
-        try:
-            selectedB.shipArray[size - 1]
-        except IndexError:
-            PlayAudio("sfx_error")
-            print("Not valid: Ship of this size does not exist")
-            PlayAudio("i_no_exist_ship")
-            #PlayAudio("")
-            continue
-        if(selectedB.shipArray[size - 1] == 0):
-            PlayAudio("sfx_error")
-            print("Not valid: No ships of this size")
-            PlayAudio("i_no_ships_size")
-            PlayAudio(str(size))
-            continue
-        if(selectedB.check_ship(x, y, dirX, dirY, size, True) == False):
-            print("Not Valid: Choose a smaller size")
-            PlayAudio("i_choose_smaller")
-            continue
-        PlayAudio("sfx_accept")
-        PlayAudio("i_selected")
-        PlayAudio(str(size))
-        break
-
-    while(isPlayer == False):
-        size = str(random.randint(1,len(selectedB.shipArray)))
-        try:
-            size = int(size)
-        except ValueError:
-            continue
-        #Does a ship of specified size exist (is it below 5 in size)
-        try:
-            selectedB.shipArray[size - 1]
-        except IndexError:
-            continue
-        if(selectedB.shipArray[size - 1] == 0):
-            continue
-        if(selectedB.check_ship(x, y, dirX, dirY, size, False) == False):
-            continue
-        break
-
-    return size
-
-def CheckCoords(coordinates, isPlayer):
+def CheckCoords(coordinates, isMute):
     #Reset if input doesnt have 2 characters
-    if len(coordinates) > 2:
-        if(isPlayer):
+    if len(coordinates) != 2:
+        if(not isMute):
             PlayAudio("sfx_error")
-            print("Not valid: Too many characters in input")
-            #TODO: "Too many characters"
             PlayAudio("i_invalid")
         return False
-    if len(coordinates) < 2:
-        if(isPlayer):
-            PlayAudio("sfx_error")
-            print("Not Valid: Too few characters in input")
-            #TODO: "Too few characters"
-            PlayAudio("i_invalid")
-        return False
+
     temp = list(coordinates)
     x = temp[0].lower()
     y = temp[1].lower()
+
     if x not in alphabet and x not in numbers:
         if(isPlayer):
             PlayAudio("sfx_error")
-            print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
     if y not in alphabet and y not in numbers:
         if(isPlayer):
             PlayAudio("sfx_error")
-            print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
     if x in alphabet and y in alphabet:
@@ -577,9 +604,10 @@ def CheckCoords(coordinates, isPlayer):
             print("Not Valid: invalid characters")
             PlayAudio("i_invalid")
         return False
-
     return True
 
+#Takes one parameter of type string.
+#Returns the x and y values it represents
 def ConvertCoords(coordinates):
     temp = list(coordinates)
     x = temp[0].lower()
@@ -600,17 +628,16 @@ def ConvertCoords(coordinates):
 def PlayAudio(fileName, sleep = True):
     path = "audio/" + fileName + ".wav"
     mixer.music.load(path)
-    #mixer.music.play()
+    mixer.music.play()
     if(sleep):
         wr = wave.open(path, "r")
         frames = wr.getnframes()
         frameRate = wr.getframerate()
         duration = frames / frameRate
-        #time.sleep(duration)
-
+        time.sleep(duration)
 
 #Start the game by calling GameLoop() once
 GameLoop()
 
 #Prevent game from closing instantly after GameLoop() is over
-input("Exit Game?")
+input("Exit Game?") #Game will close when enter is pressed
