@@ -479,10 +479,8 @@ def FireAt(selectedB, isPlayer):
         break
 
     while(not isPlayer):
-        limiter += 1
         # If computer hit something last turn, initiate AI algorhytm.
-        # Limiter is failsafe that prevents endless looping.
-        if(selectedB.lastHit != [] and limiter < 25):
+        if(selectedB.lastHit != []):
             # Create shorthand variable.
             r = selectedB.lastHit
             # If we hit multiple times, we can determine direction.
