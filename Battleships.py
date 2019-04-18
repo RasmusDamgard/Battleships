@@ -19,7 +19,7 @@ mixer.init()
 # Global constants. Read-only or deepcopied for use.
 alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
 numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-shipArray = [0, 0, 0, 0, 1]
+shipArray = [0, 0, 0, 0, 5]
 gridX = 9
 gridY = 9
 
@@ -122,21 +122,25 @@ class Board:
         # Checks if there exists a ship with the given shipID anywhere in grid.
         # If not, its because the ship has been destroyed.
         if(not any(shipID in sublist for sublist in self.hidden)):
-            # For AI purposes, change grid to reflect the ship is destroyed.
-            for c in range(gridX):
-                for r in range(gridY):
-                    if(self.hidden[r][c] == shipID + 10):
-                        self.visible[r][c] = 3
-
             # Give sound feedback depending on whose board got hit.
             if(self.isPlayer):
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_allied_ship_destroyed")
                 # Clear AI memory.
                 self.lastHit.clear()
+                for r in range(gridY):
+                    for c in range(gridX):
+                        # Change grid to reflect the ship is destroyed
+                        if(self.hidden[c][r] == shipID + 10):
+                            self.visible[c][r] = 3
+                        # Add back in remaining ships that has been spotted.
+                        if(self.visible[c][r] == 2):
+                            self.lastHit.append(c)
+                            self.lastHit.append(r)
             else:
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_enemy_ship_destroyed")
+
 
     # Checks if all ships have been removed from the grid, meaning game over.
     # Returns True if game is over, False if game is still going on.
@@ -180,6 +184,7 @@ class Board:
 
             # Place the ship at given values.
             self.add_ship(self.shipParams)
+            self.draw_hidden()
 
             # Audio feedback for player.
             if(self.isPlayer):
@@ -237,7 +242,7 @@ class Board:
                 self.is_ship_position_valid(ship1, True) is False and
                 self.is_ship_position_valid(ship2, True) is False and
                 self.is_ship_position_valid(ship3, True) is False and
-                self.is_ship_position_valid(ship4, True)
+                self.is_ship_position_valid(ship4, True) is False
             ):
                 # Audio feedback only given if all directions are blocked.
                 PlayAudio("sfx_error")
@@ -289,20 +294,22 @@ class Board:
 
     def set_direction(self):
         while(self.isPlayer):
+            self.shipParams.dirX = 0
+            self.shipParams.dirY = 0
             PlayAudio("q_direction", False)
-            strDirection = input("Direction?")
+            strDirection = input("Direction?").lower()
 
             # Parse input.
-            if(strDirection.lower() in ["up", "u"]):
+            if(strDirection in ["up", "u"]):
                 self.shipParams.dirY = -1
                 strDirection = "up"
-            elif(strDirection.lower() in ["down", "d"]):
+            elif(strDirection in ["down", "d"]):
                 self.shipParams.dirY = 1
                 strDirection = "down"
-            elif(strDirection.lower() in ["left", "l"]):
+            elif(strDirection in ["left", "l"]):
                 self.shipParams.dirX = -1
                 strDirection = "left"
-            elif(strDirection.lower() in ["right", "r"]):
+            elif(strDirection in ["right", "r"]):
                 self.shipParams.dirX = 1
                 strDirection = "right"
             else:
@@ -323,17 +330,18 @@ class Board:
             break
 
         while(not self.isPlayer):
+            self.shipParams.dirX = 0
+            self.shipParams.dirY = 0
             strDirection = random.choice(["up", "down", "left", "right"])
 
-            if(strDirection.lower() in ["up"]):
-                self.shipParams.dirY = 1
-            elif(strDirection.lower() in ["down"]):
+            if(strDirection in ["up"]):
                 self.shipParams.dirY = -1
-            elif(strDirection.lower() in ["left"]):
+            elif(strDirection in ["down"]):
+                self.shipParams.dirY = 1
+            elif(strDirection in ["left"]):
                 self.shipParams.dirX = -1
-            elif(strDirection.lower() in ["right"]):
+            elif(strDirection in ["right"]):
                 self.shipParams.dirX = 1
-
             if(self.is_ship_position_valid(self.shipParams, True) is False):
                 continue
 
@@ -412,7 +420,6 @@ def GameLoop():
     computerBoard = Board(False)
     playerBoard.ship_setup()
     computerBoard.ship_setup()
-    computerBoard.draw_hidden()
 
     # The loop in which the game is played, only breaks on game over.
     while(True):
@@ -480,6 +487,8 @@ def FireAt(selectedB, isPlayer):
 
     while(not isPlayer):
         # If computer hit something last turn, initiate AI algorhytm.
+        # Programmers note: This algorhytm could be refactored to take up less
+        # lines and have fewer comments, but this way its easier to read.
         if(selectedB.lastHit != []):
             # Create shorthand variable.
             r = selectedB.lastHit
@@ -489,19 +498,44 @@ def FireAt(selectedB, isPlayer):
                 if(r[0] == r[2]):
                     # x should be the same value.
                     x = r[0]
-                    # but y should be either one below or one above lasthits.
-                    # t calculates direction based on what was hit first.
+                    # v is a sorted list of all y-coordinates in lasthits.
                     # k calculates distance between far ends of the ship.
-                    t = r[1] - r[3]
-                    k = int(len(r) / 2 + 1)
-                    y = r[1] + t - t * random.randint(0, 1) * k
+                    v = sorted(r[1::2])
+                    k = max(v) - min(v) + 2
+                    # y then becomes either one below or one above lasthits.
+                    y = v[0] - 1 + k * random.randint(0, 1)
+                    # The two possible outcomes
+                    temp1 = v[0] - 1 + k
+                    temp2 = v[0] - 1
+                    # If both outcomes are invalid (i.e. what the algorhytm
+                    # thought was one ship in a line, is in reality multiple
+                    # ships laying across)
+                    if (
+                        selectedB.visible[x][temp1] > 0 and
+                        selectedB.visible[x][temp2] > 0
+                    ):
+                        # Then select one of the y-values of lastHits and pick
+                        # a new x which is nearby on x-axis
+                        y = r[1]
+                        b = sorted(r[::2])
+                        h = max(b) - min(b) + 2
+                        x = b[0] - 1 + h * random.randint(0, 1)
                 # Same method, but reverse.
-                if(r[1] == r[3]):
+                elif(r[1] == r[3]):
                     y = r[1]
-                    t = r[0] - r[2]
-                    k = int(len(r) / 2 + 1)
-                    x = r[0] + t - t * random.randint(0, 1) * k
-
+                    v = sorted(r[::2])
+                    k = max(v) - min(v) + 2
+                    x = v[0] - 1 + k * random.randint(0, 1)
+                    temp1 = v[0] - 1 + k
+                    temp2 = v[0] - 1
+                    if (
+                        selectedB.visible[temp1][y] > 0 and
+                        selectedB.visible[temp2][y] > 0
+                    ):
+                        x = r[0]
+                        b = sorted(r[1::2])
+                        h = max(b) - min(b) + 2
+                        x = b[0] - 1 + h * random.randint(0, 1)
             # If we hit once, ship must be in one of the 4 adjacent squares
             else:
                 # Same coordinates as lasthit, but add or remove one at random.
@@ -516,17 +550,17 @@ def FireAt(selectedB, isPlayer):
                     y += 1
                 if(temp == 3):
                     y -= 1
-            if(x < 0 or y < 0):
-                continue
-
         # If nothing was hit last turn, select completely randomly.
         else:
-            selectedB.lastHit.clear()
             x = random.choice(alphabet)
             y = random.choice(numbers)
             coordinates = x + y
             x, y = ConvertCoords(coordinates)
 
+        if(x < 0 or y < 0):
+            continue
+        if(x > gridX - 1 or y > gridY - 1):
+            continue
         if(selectedB.visible[x][y] > 0):
             continue
 
@@ -616,7 +650,7 @@ def ConvertCoords(coordinates: str):
 def PlayAudio(fileName, sleep=True):
     path = "audio/" + fileName + ".wav"
     mixer.music.load(path)
-    mixer.music.play()
+    #mixer.music.play()
     if(sleep):
         # Calculate how long the audioclip is.
         wr = wave.open(path, "r")
@@ -624,7 +658,7 @@ def PlayAudio(fileName, sleep=True):
         frameRate = wr.getframerate()
         duration = frames / frameRate
         # Sleep system for that long.
-        time.sleep(duration)
+        #time.sleep(duration)
 
 
 # Start the game by calling GameLoop() once.
