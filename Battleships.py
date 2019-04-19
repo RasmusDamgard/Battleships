@@ -19,7 +19,7 @@ mixer.init()
 # Global constants. Read-only or deepcopied for use.
 alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
 numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
-shipArray = [0, 0, 0, 0, 5]
+shipArray = [0, 1, 2, 1, 1]
 gridX = 9
 gridY = 9
 
@@ -117,30 +117,31 @@ class Board:
         self.shipArray[ship.size - 1] -= 1
 
     # Checks if all squares of given shipID has been hit.
-    # Doesnt return anything, handles what needs to be handled internally.
     def check_destroyed(self, shipID: int):
         # Checks if there exists a ship with the given shipID anywhere in grid.
         # If not, its because the ship has been destroyed.
         if(not any(shipID in sublist for sublist in self.hidden)):
-            # Give sound feedback depending on whose board got hit.
+            # Give sound feedback depending on whose ship got destroyed.
             if(self.isPlayer):
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_allied_ship_destroyed")
-                # Clear AI memory.
-                self.lastHit.clear()
-                for r in range(gridY):
-                    for c in range(gridX):
-                        # Change grid to reflect the ship is destroyed
-                        if(self.hidden[c][r] == shipID + 10):
-                            self.visible[c][r] = 3
-                        # Add back in remaining ships that has been spotted.
-                        if(self.visible[c][r] == 2):
-                            self.lastHit.append(c)
-                            self.lastHit.append(r)
+                self.clear_ai_memory(shipID)
+
             else:
                 PlayAudio("sfx_destroyed")
                 PlayAudio("i_enemy_ship_destroyed")
 
+    def clear_ai_memory(self, shipID: int):
+        self.lastHit.clear()
+        for r in range(gridY):
+            for c in range(gridX):
+                # Change grid to reflect the ship is destroyed.
+                if(self.hidden[c][r] == shipID + 10):
+                    self.visible[c][r] = 3
+                # Add back in remaining spotted ships that arent destroyed.
+                if(self.visible[c][r] == 2):
+                    self.lastHit.append(c)
+                    self.lastHit.append(r)
 
     # Checks if all ships have been removed from the grid, meaning game over.
     # Returns True if game is over, False if game is still going on.
@@ -510,10 +511,17 @@ def FireAt(selectedB, isPlayer):
                     # If both outcomes are invalid (i.e. what the algorhytm
                     # thought was one ship in a line, is in reality multiple
                     # ships laying across)
-                    if (
-                        selectedB.visible[x][temp1] > 0 and
-                        selectedB.visible[x][temp2] > 0
-                    ):
+                    cond1 = True
+                    cond2 = True
+                    if(temp1 < 0 or temp1 > gridY - 1):
+                        cond1 = False
+                    elif(selectedB.visible[x][temp1] > 0):
+                        cond1 = False
+                    if(temp2 < 0 or temp2 > gridY - 1):
+                        cond2 = False
+                    elif(selectedB.visible[x][temp2] > 0):
+                        cond2 = False
+                    if (cond1 is False and cond2 is False):
                         # Then select one of the y-values of lastHits and pick
                         # a new x which is nearby on x-axis
                         y = r[1]
@@ -528,10 +536,17 @@ def FireAt(selectedB, isPlayer):
                     x = v[0] - 1 + k * random.randint(0, 1)
                     temp1 = v[0] - 1 + k
                     temp2 = v[0] - 1
-                    if (
-                        selectedB.visible[temp1][y] > 0 and
-                        selectedB.visible[temp2][y] > 0
-                    ):
+                    cond1 = True
+                    cond2 = True
+                    if(temp1 < 0 or temp1 > gridX - 1):
+                        cond1 = False
+                    elif(selectedB.visible[temp1][y] > 0):
+                        cond1 = False
+                    if(temp2 < 0 or temp2 > gridX - 1):
+                        cond2 = False
+                    elif(selectedB.visible[temp2][y] > 0):
+                        cond2 = False
+                    if (cond1 is False and cond2 is False):
                         x = r[0]
                         b = sorted(r[1::2])
                         h = max(b) - min(b) + 2
@@ -650,7 +665,7 @@ def ConvertCoords(coordinates: str):
 def PlayAudio(fileName, sleep=True):
     path = "audio/" + fileName + ".wav"
     mixer.music.load(path)
-    #mixer.music.play()
+    mixer.music.play()
     if(sleep):
         # Calculate how long the audioclip is.
         wr = wave.open(path, "r")
@@ -658,7 +673,7 @@ def PlayAudio(fileName, sleep=True):
         frameRate = wr.getframerate()
         duration = frames / frameRate
         # Sleep system for that long.
-        #time.sleep(duration)
+        time.sleep(duration)
 
 
 # Start the game by calling GameLoop() once.
