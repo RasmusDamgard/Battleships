@@ -15,6 +15,9 @@ import random
 import time
 import copy
 
+# Locally stored configuration file
+import config
+
 # Modules installed via pip
 import wave
 from pygame import mixer
@@ -58,6 +61,20 @@ class Board:
         self.lastHit = []
         # Boolean for determining if board belongs to player or computer
         self.isPlayer = isPlayer
+        self.tutCount = 0
+        """if(isPlayer):
+            #Load config file and read in settings
+            f = open("config.txt", "r")
+            settings = []
+            for line in f:
+                a = line.rstrip()
+                b = a.split("=", 1)
+                settings.append(b)
+            for n in settings:
+                index = n.index("PlayTutorial")
+                self.playTutorial = settings[index][1]
+            if(self.playTutorial):
+                self.tutCount = 0 """
 
     # These two functions draw the grid. Only used for developing/debugging.
     def draw_visible(self):
@@ -162,7 +179,7 @@ class Board:
     def ship_setup(self):
         for ships in range(self.shipNum):
             # If its a player, inform them what ships they have left.
-            if (self.isPlayer):
+            if(self.isPlayer and not config.settings["ShipSetupTutorial"]):
                 for i in range(len(self.shipArray)):
                     if (self.shipArray[i] == 0):
                         continue
@@ -206,12 +223,18 @@ class Board:
                     PlayAudio("i_up")
                 PlayAudio("i_size")
                 PlayAudio(str(self.shipParams.size))
+                if(config.settings["ShipSetupTutorial"] is True):
+                    #PlayAudio("i_ship_setup_tutorial")
+                    config.settings["ShipSetupTutorial"] = False
         if(self.isPlayer):
             PlayAudio("i_all_ships_deploy")
 
     def set_coords(self):
         # While loop is used as GOTO-statement with continue keyword.
         while(self.isPlayer):
+            if(config.settings["SetCoordsTutorial"] is True):
+                PlayAudio("6")
+
             # Ask for coordinates, allow user to input before message is over.
             PlayAudio("q_coordinates", False)
             strCoords = input("Coordinates?")
@@ -259,6 +282,7 @@ class Board:
             PlayAudio(alphabet[x])
             PlayAudio(numbers[y])
 
+            config.settings["SetCoordsTutorial"] = False
             break
 
         # A non-player board does almost the same, but with no audio feedback.
@@ -298,6 +322,9 @@ class Board:
 
     def set_direction(self):
         while(self.isPlayer):
+            if(config.settings["SetDirectionTutorial"] is True):
+                PlayAudio("7")
+
             self.shipParams.dirX = 0
             self.shipParams.dirY = 0
             PlayAudio("q_direction", False)
@@ -331,6 +358,8 @@ class Board:
             PlayAudio("i_selected")
             PlayAudio("i_" + strDirection)
 
+            config.settings["SetSizeTutorial"] = False
+
             break
 
         while(not self.isPlayer):
@@ -353,6 +382,9 @@ class Board:
 
     def set_size(self):
         while(self.isPlayer):
+            if(config.settings["SetSizeTutorial"] is True):
+                PlayAudio("8")
+
             PlayAudio("q_size", False)
             strSize = input("Size of ship")
 
@@ -390,6 +422,8 @@ class Board:
             PlayAudio("i_selected")
             PlayAudio(strSize)
 
+            config.settings["SetSizeTutorial"] = False
+
             break
 
         while(not self.isPlayer):
@@ -413,13 +447,11 @@ class Board:
 
 # Main function that calls all other functions.
 def GameLoop():
-    # TODO: Make automatic
-    PlayAudio("q_tutorial", False)
-    tutPlay = input("Do u want to hear a tutorial on how to play?")
-    if (tutPlay == "y"):
-        PlayAudio("i_tutorial")
-
     # Functions that only need to be called once.
+    #PlayAudio("i_welcome")
+    if(config.settings["ShipSetupTutorial"]):
+        #PlayAudio("i_introduction")
+        pass
     playerBoard = Board(True)
     computerBoard = Board(False)
     playerBoard.ship_setup()
@@ -446,10 +478,13 @@ def GameLoop():
 
 
 def FireAt(selectedB, isPlayer):
-    x = 0
-    y = 0
-    limiter = 0
     while(isPlayer):
+        x = 0
+        y = 0
+
+        if(config.settings["SetDirectionTutorial"] is True):
+                PlayAudio("2")
+
         PlayAudio("q_fire")
         coordinates = input("Where do you want to fire?")
 
@@ -493,6 +528,8 @@ def FireAt(selectedB, isPlayer):
         # If computer hit something last turn, initiate AI algorhytm.
         # Programmers note: This algorhytm could be refactored to take up less
         # lines and have fewer comments, but this way its easier to read.
+        x = 0
+        y = 0
         if(selectedB.lastHit != []):
             # Create shorthand variable.
             r = selectedB.lastHit
