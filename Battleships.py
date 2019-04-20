@@ -185,7 +185,6 @@ class Board:
 
             # Place the ship at given values.
             self.add_ship(self.shipParams)
-            self.draw_hidden()
 
             # Audio feedback for player.
             if(self.isPlayer):
