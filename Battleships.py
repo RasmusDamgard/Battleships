@@ -163,7 +163,7 @@ class Board:
                     if (self.shipArray[i] == 0):
                         continue
                     PlayAudio("i_size_ava")
-                    PlayAudio(str(i+1))
+                    PlayAudio(str(i + 1))
 
             # Calculate minSize by iterating through shipArray.
             for i in range(len(self.shipArray)):
