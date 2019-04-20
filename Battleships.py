@@ -9,10 +9,14 @@
 # Copyright:   (c) 2019, Oliver Thejl Eriksen, All rights reserved
 # Licence:     GNU GPLv3
 # -----------------------------------------------------------------------------
+
+# Local python modules.
 import random
-import wave
 import time
 import copy
+
+# Modules installed via pip
+import wave
 from pygame import mixer
 mixer.init()
 
