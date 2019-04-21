@@ -10,13 +10,13 @@
 # Licence:     GNU GPLv3
 # -----------------------------------------------------------------------------
 
+# Locally stored configuration file
+import config
+
 # Local python modules.
 import random
 import time
 import copy
-
-# Locally stored configuration file
-import config
 
 # Modules installed via pip
 import wave
@@ -180,10 +180,10 @@ class Board:
         for ships in range(self.shipNum):
             # If its a player, inform them what ships they have left.
             if(self.isPlayer and not config.settings["ShipSetupTutorial"]):
+                PlayAudio("i_size_ava")
                 for i in range(len(self.shipArray)):
                     if (self.shipArray[i] == 0):
                         continue
-                    PlayAudio("i_size_ava")
                     PlayAudio(str(i + 1))
 
             # Calculate minSize by iterating through shipArray.
@@ -240,7 +240,7 @@ class Board:
             strCoords = input("Coordinates?")
 
             # Check if the inputted coordinates are valid.
-            if(are_coords_valid(strCoords, True) is False):
+            if(AreCoordsValid(strCoords, True) is False):
                 continue
 
             # Convert the string input into x and y integers.
@@ -291,7 +291,7 @@ class Board:
             strY = random.choice(numbers)
             coordinates = strX + strY
 
-            if(are_coords_valid(coordinates, True) is False):
+            if(AreCoordsValid(coordinates, True) is False):
                 continue
 
             x, y = ConvertCoords(coordinates)
@@ -388,7 +388,7 @@ class Board:
             PlayAudio("q_size", False)
             strSize = input("Size of ship")
 
-            # Is input an integer? Then parse it.
+            # Can input be parsed as an integer?
             try:
                 size = int(strSize)
             except ValueError:
@@ -488,8 +488,8 @@ def FireAt(selectedB, isPlayer):
         PlayAudio("q_fire")
         coordinates = input("Where do you want to fire?")
 
-        if(are_coords_valid(coordinates, True) is False):
-            # Sound feedback comes from are_coords_valid().
+        if(AreCoordsValid(coordinates, True) is False):
+            # Sound feedback comes from AreCoordsValid().
             continue
 
         x, y = ConvertCoords(coordinates)
@@ -644,7 +644,7 @@ def FireAt(selectedB, isPlayer):
         break
 
 
-def are_coords_valid(coordinates: str, isMute: bool):
+def AreCoordsValid(coordinates: str, isMute: bool):
     # Not valid if input doesnt have exactly 2 characters.
     if len(coordinates) != 2:
         if(not isMute):
