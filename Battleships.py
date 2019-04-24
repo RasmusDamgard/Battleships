@@ -62,19 +62,6 @@ class Board:
         # Boolean for determining if board belongs to player or computer
         self.isPlayer = isPlayer
         self.tutCount = 0
-        """if(isPlayer):
-            #Load config file and read in settings
-            f = open("config.txt", "r")
-            settings = []
-            for line in f:
-                a = line.rstrip()
-                b = a.split("=", 1)
-                settings.append(b)
-            for n in settings:
-                index = n.index("PlayTutorial")
-                self.playTutorial = settings[index][1]
-            if(self.playTutorial):
-                self.tutCount = 0 """
 
     # These two functions draw the grid. Only used for developing/debugging.
     def draw_visible(self):
@@ -224,7 +211,7 @@ class Board:
                 PlayAudio("i_size")
                 PlayAudio(str(self.shipParams.size))
                 if(config.settings["ShipSetupTutorial"] is True):
-                    #PlayAudio("i_ship_setup_tutorial")
+                    PlayAudio("i_ship_setup_tutorial")
                     config.settings["ShipSetupTutorial"] = False
         if(self.isPlayer):
             PlayAudio("i_all_ships_deploy")
@@ -233,14 +220,14 @@ class Board:
         # While loop is used as GOTO-statement with continue keyword.
         while(self.isPlayer):
             if(config.settings["SetCoordsTutorial"] is True):
-                PlayAudio("6")
+                PlayAudio("i_set_coords_tutorial")
 
             # Ask for coordinates, allow user to input before message is over.
             PlayAudio("q_coordinates", False)
             strCoords = input("Coordinates?")
 
             # Check if the inputted coordinates are valid.
-            if(AreCoordsValid(strCoords, True) is False):
+            if(AreCoordsValid(strCoords, False) is False):
                 continue
 
             # Convert the string input into x and y integers.
@@ -323,7 +310,7 @@ class Board:
     def set_direction(self):
         while(self.isPlayer):
             if(config.settings["SetDirectionTutorial"] is True):
-                PlayAudio("7")
+                PlayAudio("i_set_direction_tutorial")
 
             self.shipParams.dirX = 0
             self.shipParams.dirY = 0
@@ -358,7 +345,7 @@ class Board:
             PlayAudio("i_selected")
             PlayAudio("i_" + strDirection)
 
-            config.settings["SetSizeTutorial"] = False
+            config.settings["SetDirectionTutorial"] = False
 
             break
 
@@ -383,7 +370,7 @@ class Board:
     def set_size(self):
         while(self.isPlayer):
             if(config.settings["SetSizeTutorial"] is True):
-                PlayAudio("8")
+                PlayAudio("i_set_size_tutorial")
 
             PlayAudio("q_size", False)
             strSize = input("Size of ship")
@@ -448,14 +435,15 @@ class Board:
 # Main function that calls all other functions.
 def GameLoop():
     # Functions that only need to be called once.
-    #PlayAudio("i_welcome")
+    PlayAudio("i_welcome")
     if(config.settings["ShipSetupTutorial"]):
-        #PlayAudio("i_introduction")
+        PlayAudio("i_introduction")
         pass
     playerBoard = Board(True)
     computerBoard = Board(False)
     playerBoard.ship_setup()
     computerBoard.ship_setup()
+    config.settings["ShipSetupTutorial"] = False
 
     # The loop in which the game is played, only breaks on game over.
     while(True):
@@ -482,10 +470,9 @@ def FireAt(selectedB, isPlayer):
         x = 0
         y = 0
 
-        if(config.settings["SetDirectionTutorial"] is True):
-                PlayAudio("2")
-
         PlayAudio("q_fire")
+        if(config.settings["FiringTutorial"] is True):
+                PlayAudio("i_firing_tutorial")
         coordinates = input("Where do you want to fire?")
 
         if(AreCoordsValid(coordinates, True) is False):
@@ -521,6 +508,8 @@ def FireAt(selectedB, isPlayer):
             PlayAudio("sfx_hit")
             PlayAudio("i_hit")
             selectedB.check_destroyed(shipID)
+
+        config.settings["FiringTutorial"] = False
 
         break
 
@@ -713,7 +702,7 @@ def PlayAudio(fileName, sleep=True):
         frameRate = wr.getframerate()
         duration = frames / frameRate
         # Sleep system for that long.
-        time.sleep(duration)
+        #time.sleep(duration)
 
 
 # Start the game by calling GameLoop() once.
