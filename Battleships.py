@@ -438,7 +438,6 @@ def GameLoop():
     PlayAudio("i_welcome")
     if(config.settings["ShipSetupTutorial"]):
         PlayAudio("i_introduction")
-        pass
     playerBoard = Board(True)
     computerBoard = Board(False)
     playerBoard.ship_setup()
@@ -702,7 +701,7 @@ def PlayAudio(fileName, sleep=True):
         frameRate = wr.getframerate()
         duration = frames / frameRate
         # Sleep system for that long.
-        #time.sleep(duration)
+        time.sleep(duration)
 
 
 # Start the game by calling GameLoop() once.
