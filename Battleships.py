@@ -471,7 +471,7 @@ def FireAt(selectedB, isPlayer):
 
         PlayAudio("q_fire")
         if(config.settings["FiringTutorial"] is True):
-                PlayAudio("i_firing_tutorial")
+            PlayAudio("i_firing_tutorial")
         coordinates = input("Where do you want to fire?")
 
         if(AreCoordsValid(coordinates, True) is False):
